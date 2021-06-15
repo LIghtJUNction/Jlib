@@ -16,19 +16,17 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-using Harmony;
+using HarmonyLib;
 using System;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
 
-namespace PeterHan.PLib {
+namespace PeterHan.PLib.Core {
 	/// <summary>
 	/// Extension methods to make life easier!
-	/// 
-	/// This class is a cutdown version for PLib Options.
 	/// </summary>
-	internal static class OptionsExtensionMethods {
+	public static class ExtensionMethods {
 		/// <summary>
 		/// Shorthand for string.Format() which can be invoked directly on the message.
 		/// </summary>
@@ -37,27 +35,6 @@ namespace PeterHan.PLib {
 		/// <returns>The formatted string.</returns>
 		public static string F(this string message, params object[] args) {
 			return string.Format(message, args);
-		}
-
-		/// <summary>
-		/// Uses Traverse to call a private method on an object.
-		/// </summary>
-		/// <param name="root">The object on which to call the method.</param>
-		/// <param name="name">The method name to call.</param>
-		/// <param name="args">The arguments to supply to the method.</param>
-		public static void CallMethod(this Traverse root, string name, params object[] args) {
-			root.Method(name, args).GetValue(args);
-		}
-
-		/// <summary>
-		/// Uses Traverse to call a private method on an object.
-		/// </summary>
-		/// <param name="root">The object on which to call the method.</param>
-		/// <param name="name">The method name to call.</param>
-		/// <param name="args">The arguments to supply to the method.</param>
-		/// <returns>The method's return value.</returns>
-		public static T CallMethod<T>(this Traverse root, string name, params object[] args) {
-			return root.Method(name, args).GetValue<T>(args);
 		}
 
 		/// <summary>
@@ -74,23 +51,12 @@ namespace PeterHan.PLib {
 		}
 
 		/// <summary>
-		/// Uses Traverse to retrieve a private field of an object.
+		/// Gets the assembly name of an assembly.
 		/// </summary>
-		/// <param name="root">The object on which to get the field.</param>
-		/// <param name="name">The field name to access.</param>
-		/// <returns>The value of the field.</returns>
-		public static T GetField<T>(this Traverse root, string name) {
-			return root.Field(name).GetValue<T>();
-		}
-
-		/// <summary>
-		/// Uses Traverse to retrieve a private property of an object.
-		/// </summary>
-		/// <param name="root">The object on which to get the property.</param>
-		/// <param name="name">The property name to access.</param>
-		/// <returns>The value of the property.</returns>
-		public static T GetProperty<T>(this Traverse root, string name) {
-			return root.Property(name).GetValue<T>();
+		/// <param name="assembly">The assembly to query.</param>
+		/// <returns>The assembly name, or null if assembly is null.</returns>
+		public static string GetNameSafe(this Assembly assembly) {
+			return assembly?.GetName()?.Name;
 		}
 
 		/// <summary>
@@ -110,17 +76,6 @@ namespace PeterHan.PLib {
 					modVersion = assemblyFileVersion.Version;
 			}
 			return modVersion;
-		}
-
-		/// <summary>
-		/// Retrieves the normalized path of the mod's active content directory, adjusting if
-		/// the mod is running an archived version.
-		/// </summary>
-		/// <param name="mod">The mod to query.</param>
-		/// <returns>The mod's active root directory (where its assembly is located).</returns>
-		public static string GetModBasePath(this KMod.Mod mod) {
-			return Klei.FileSystem.Normalize(System.IO.Path.Combine(mod.label.install_path,
-				mod.relative_root));
 		}
 
 		/// <summary>
@@ -166,6 +121,19 @@ namespace PeterHan.PLib {
 		}
 
 		/// <summary>
+		/// Checks to see if an object is falling.
+		/// </summary>
+		/// <param name="obj">The object to check.</param>
+		/// <returns>true if it is falling, or false otherwise.</returns>
+		public static bool IsFalling(this GameObject obj) {
+			var navigator = obj.GetComponent<Navigator>();
+			int cell = Grid.PosToCell(obj);
+			return navigator != null && !navigator.IsMoving() && Grid.
+				IsValidCell(cell) && Grid.IsValidCell(Grid.CellBelow(cell)) &&
+				!navigator.NavGrid.NavTable.IsValid(cell, navigator.CurrentNavType);
+		}
+
+		/// <summary>
 		/// Checks to see if a floating point value is NaN or infinite.
 		/// </summary>
 		/// <param name="value">The value to check.</param>
@@ -181,6 +149,15 @@ namespace PeterHan.PLib {
 		/// <returns>true if it is NaN, PositiveInfinity, or NegativeInfinity, or false otherwise.</returns>
 		public static bool IsNaNOrInfinity(this float value) {
 			return float.IsNaN(value) || float.IsInfinity(value);
+		}
+
+		/// <summary>
+		/// Checks to see if a building is usable.
+		/// </summary>
+		/// <param name="building">The building component to check.</param>
+		/// <returns>true if it is usable (enabled, not broken, not overheated), or false otherwise.</returns>
+		public static bool IsUsable(this GameObject building) {
+			return building.GetComponent<Operational>()?.IsFunctional ?? false;
 		}
 
 		/// <summary>
@@ -204,13 +181,87 @@ namespace PeterHan.PLib {
 		}
 
 		/// <summary>
-		/// Uses Traverse to set a private field of an object.
+		/// Patches a method manually.
 		/// </summary>
-		/// <param name="root">The object on which to set the field.</param>
-		/// <param name="name">The field name to edit.</param>
-		/// <param name="value">The new value to assign to the field.</param>
-		public static void SetField(this Traverse root, string name, object value) {
-			root.Field(name).SetValue(value);
+		/// <param name="instance">The Harmony instance.</param>
+		/// <param name="type">The class to modify.</param>
+		/// <param name="methodName">The method to patch.</param>
+		/// <param name="prefix">The prefix to apply, or null if none.</param>
+		/// <param name="postfix">The postfix to apply, or null if none.</param>
+		public static void Patch(this Harmony instance, Type type, string methodName,
+				HarmonyMethod prefix = null, HarmonyMethod postfix = null) {
+			if (type == null)
+				throw new ArgumentNullException(nameof(type));
+			if (string.IsNullOrEmpty(methodName))
+				throw new ArgumentNullException(nameof(methodName));
+			// Fetch the method
+			try {
+				var method = type.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.
+					Public | BindingFlags.Static | BindingFlags.Instance);
+				if (method != null)
+					instance.Patch(method, prefix, postfix);
+				else
+					PUtil.LogWarning("Unable to find method {0} on type {1}".F(methodName,
+						type.FullName));
+			} catch (AmbiguousMatchException e) {
+				PUtil.LogException(e);
+			}
+		}
+
+		/// <summary>
+		/// Patches a constructor manually.
+		/// </summary>
+		/// <param name="instance">The Harmony instance.</param>
+		/// <param name="type">The class to modify.</param>
+		/// <param name="arguments">The constructor's argument types.</param>
+		/// <param name="prefix">The prefix to apply, or null if none.</param>
+		/// <param name="postfix">The postfix to apply, or null if none.</param>
+		public static void PatchConstructor(this Harmony instance, Type type,
+				Type[] arguments, HarmonyMethod prefix = null, HarmonyMethod postfix = null) {
+			if (type == null)
+				throw new ArgumentNullException(nameof(type));
+			// Fetch the constructor
+			try {
+				var cons = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Public |
+					BindingFlags.Static | BindingFlags.Instance, null, arguments, null);
+				if (cons != null)
+					instance.Patch(cons, prefix, postfix);
+				else
+					PUtil.LogWarning("Unable to find constructor on type {0}".F(type.
+						FullName));
+			} catch (ArgumentException e) {
+				PUtil.LogException(e);
+			}
+		}
+
+		/// <summary>
+		/// Patches a method manually with a transpiler.
+		/// </summary>
+		/// <param name="instance">The Harmony instance.</param>
+		/// <param name="type">The class to modify.</param>
+		/// <param name="methodName">The method to patch.</param>
+		/// <param name="transpiler">The transpiler to apply.</param>
+		public static void PatchTranspile(this Harmony instance, Type type,
+				string methodName, HarmonyMethod transpiler) {
+			if (type == null)
+				throw new ArgumentNullException(nameof(type));
+			if (string.IsNullOrEmpty(methodName))
+				throw new ArgumentNullException(nameof(methodName));
+			// Fetch the method
+			try {
+				var method = type.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.
+					Public | BindingFlags.Static | BindingFlags.Instance);
+				if (method != null)
+					instance.Patch(method, null, null, transpiler);
+				else
+					PUtil.LogWarning("Unable to find method {0} on type {1}".F(methodName,
+						type.FullName));
+			} catch (AmbiguousMatchException e) {
+				PUtil.LogException(e);
+			} catch (FormatException e) {
+				PUtil.LogWarning("Unable to transpile method {0}: {1}".F(methodName,
+					e.Message));
+			}
 		}
 
 		/// <summary>
@@ -221,21 +272,11 @@ namespace PeterHan.PLib {
 		/// <returns>The game object, for call chaining.</returns>
 		public static GameObject SetParent(this GameObject child, GameObject parent) {
 			if (child == null)
-				throw new ArgumentNullException("child");
+				throw new ArgumentNullException(nameof(child));
 #pragma warning disable IDE0031 // Use null propagation
 			child.transform.SetParent((parent == null) ? null : parent.transform, false);
 #pragma warning restore IDE0031 // Use null propagation
 			return child;
-		}
-
-		/// <summary>
-		/// Uses Traverse to set a private property of an object.
-		/// </summary>
-		/// <param name="root">The object on which to set the property.</param>
-		/// <param name="name">The property name to edit.</param>
-		/// <param name="value">The new value to assign to the property.</param>
-		public static void SetProperty(this Traverse root, string name, object value) {
-			root.Property(name).SetValue(value);
 		}
 	}
 }

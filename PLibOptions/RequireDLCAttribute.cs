@@ -24,9 +24,13 @@ namespace PeterHan.PLib.Options {
 	/// An attribute placed on an option property for a class used as mod options in order to
 	/// show or hide it for particular DLCs. If the option is hidden, the value currently
 	/// in the options file is preserved unchanged when reading or writing.
+	/// 
+	/// This attribute can also be added to individual members of an Enum to filter the options
+	/// shown by SelectOneOptionsEntry.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = true)]
-	public sealed class RequireDLCAttribute : Attribute {
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true,
+		Inherited = true)]
+	public sealed class RequireDLCAttribute : Attribute, IRequireFilter {
 		/// <summary>
 		/// The DLC ID to check.
 		/// </summary>
@@ -43,9 +47,10 @@ namespace PeterHan.PLib.Options {
 		/// must also be present to be displayed at all.
 		/// </summary>
 		/// <param name="dlcID">The DLC ID to require. Must be one of:
-		/// DlcManager.EXPANSION1_ID, DlcManager.VANILLA_ID</param>
+		/// DlcManager.EXPANSION1_ID, DlcManager.DLC2_ID, DlcManager.DLC3_ID,
+		/// DlcMaanger.DLC4_ID, DlcManager.VANILLA_ID</param>
 		public RequireDLCAttribute(string dlcID) {
-			DlcID = dlcID;
+			DlcID = dlcID ?? "";
 			Required = true;
 		}
 
@@ -54,11 +59,16 @@ namespace PeterHan.PLib.Options {
 		/// [Option] attribute must also be present to be displayed at all.
 		/// </summary>
 		/// <param name="dlcID">The DLC ID to require or forbid. Must be one of:
-		/// DlcManager.EXPANSION1_ID, DlcManager.VANILLA_ID</param>
+		/// DlcManager.EXPANSION1_ID, DlcManager.DLC2_ID, DlcManager.DLC3_ID,
+		/// DlcMaanger.DLC4_ID, DlcManager.VANILLA_ID</param>
 		/// <param name="required">true to require the DLC, or false to forbid it.</param>
 		public RequireDLCAttribute(string dlcID, bool required) {
 			DlcID = dlcID ?? "";
 			Required = required;
+		}
+
+		public bool Filter() {
+			return PGameUtils.IsDLCOwned(DlcID) != Required;
 		}
 
 		public override string ToString() {

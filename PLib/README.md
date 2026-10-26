@@ -64,6 +64,27 @@ Using the `AssemblyVersion` instead is discouraged, because changing `AssemblyVe
 The `PLib.Core` component is required by all other PLib components.
 It contains only a minimal patch manager and general utilities that do not require any patches at runtime, such as Detours, reflection utilities, and basic game helpers.
 
+### Dynamically loaded implementation assemblies
+
+If a mod bootstrap loads its implementation from a subdirectory, associate the
+implementation with the owning `KMod.Mod` before accessing configuration or options:
+
+```csharp
+PUtil.RegisterModAssembly(implementationAssembly, mod);
+```
+
+`PUtil.GetModPath` then uses that mod's selected content root, preserving its
+configuration, translations, images, and archived-version directory.
+`PUtil.GetModInfo` finds either an explicitly registered owner or a mod whose
+native DLL list contains the assembly. PLib Options also checks this current
+ownership information, including registrations made after its initial snapshot.
+
+Registration is idempotent for the same assembly and owner. Reassigning an
+assembly to a different owner throws `InvalidOperationException`.
+The association belongs to the PLib assembly that receives the call; other
+embedded copies of PLib do not automatically receive it. The bootstrap must
+still handle DLL loading and any game loader registration it requires.
+
 ## User Interface
 
 The `PLib.UI` component is used to create custom user interfaces, in the same style as the base game.

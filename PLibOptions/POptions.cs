@@ -98,6 +98,10 @@ namespace PeterHan.PLib.Options {
 		internal static KMod.Mod GetModFromType(Type optionsType) {
 			if (optionsType == null)
 				throw new ArgumentNullException(nameof(optionsType));
+			// Implementation DLLs can be registered after Initialize captured shared data.
+			var owner = PUtil.GetModInfo(optionsType.Assembly);
+			if (owner != null)
+				return owner;
 			var sd = PRegistry.Instance.GetSharedData(typeof(POptions).FullName);
 			// Look up mod in the shared data
 			if (!(sd is IDictionary<Assembly, KMod.Mod> lookup) || !lookup.TryGetValue(

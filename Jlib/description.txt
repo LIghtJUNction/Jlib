@@ -1,0 +1,14 @@
+[h1]Jlib — 共用前置库[/h1]
+Jlib 是从 Peter Han 的 PLib 4.25 派生的共享库，为依赖它的《缺氧》Mod 提供设置界面、UI、快捷键、建筑、数据库和光照等公共功能。
+
+[b]使用方法[/b]
+订阅并在游戏的 Mod 列表中启用 Jlib，再启用依赖它的 Mod。建议将 Jlib 放在这些 Mod 前面，重启游戏使变更生效。一份 Jlib.dll 可供多个依赖 Mod 共用。
+
+Jlib 本身不改变殖民地玩法。其他作者使用原版内嵌 PLib 的 Mod 无需迁移。本项目不会替换或删除它们的 PLib。
+
+[b]开发者[/b]
+NuGet：LIghtJUNction.Jlib。API 保留 PeterHan.PLib 命名空间。消费者应以编译期引用方式使用，禁止把 Jlib.dll 合并或复制进各自的发行包；请配置前置依赖检查。
+
+[b]来源与授权[/b]
+PLib 源码与文档由 Peter Han 按 MIT 授权；Jlib 保留原始版权与许可。源码：https://github.com/LIghtJUNction/Jlib
+上游：https://github.com/peterhaneve/ONIMods

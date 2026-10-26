@@ -26,7 +26,7 @@ namespace PeterHan.PLib.Core {
 	/// <summary>
 	/// Static utility functions used across mods.
 	/// </summary>
-	public static class PUtil {
+	public static partial class PUtil {
 		/// <summary>
 		/// Retrieves the current changelist version of the game. LU-371502 has a version of
 		/// 371502u.
@@ -75,6 +75,8 @@ namespace PeterHan.PLib.Core {
 								result[assembly] = mod;
 					}
 			}
+			foreach (var pair in registeredModAssemblies)
+				result[pair.Key] = pair.Value;
 			return result;
 		}
 
@@ -130,6 +132,9 @@ namespace PeterHan.PLib.Core {
 		public static string GetModPath(Assembly modDLL) {
 			if (modDLL == null)
 				throw new ArgumentNullException(nameof(modDLL));
+			string registeredPath = GetRegisteredModPath(modDLL);
+			if (!string.IsNullOrEmpty(registeredPath))
+				return registeredPath;
 			string dir = null;
 			try {
 				dir = Directory.GetParent(modDLL.Location)?.FullName;

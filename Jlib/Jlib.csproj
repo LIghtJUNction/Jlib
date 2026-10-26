@@ -1,0 +1,100 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
+    <AssemblyName>Jlib</AssemblyName>
+    <RootNamespace>Jlib</RootNamespace>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>LIghtJUNction.Jlib</PackageId>
+    <Title>Jlib shared library for Oxygen Not Included</Title>
+    <Authors>Peter Han;LIghtJUNction</Authors>
+    <Copyright>Copyright Peter Han and Jlib contributors</Copyright>
+    <Description>Standalone shared PLib-compatible library for Oxygen Not Included mods. Install and enable the Jlib Workshop mod once. Consumer mods reference Jlib.dll without embedding it.</Description>
+    <PackageProjectUrl>https://github.com/LIghtJUNction/Jlib</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LIghtJUNction/Jlib</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>OxygenNotIncluded;ONI;PLib;Jlib;modding</PackageTags>
+    <OniManagedPath Condition="'$(OniManagedPath)' == ''">$(ONI_MANAGED_PATH)</OniManagedPath>
+    <JlibArtifactDir Condition="'$(JlibArtifactDir)' == ''">$(MSBuildProjectDirectory)/../artifacts</JlibArtifactDir>
+    <PackageOutputPath>$(JlibArtifactDir)/nuget</PackageOutputPath>
+    <JlibDistPath Condition="'$(JlibDistPath)' == '' and Exists('$(MSBuildProjectDirectory)/../../../onim.toml') and Exists('$(MSBuildProjectDirectory)/../../../mods/OniMcp/OniMcp.csproj')">$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../../dist'))</JlibDistPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+    <!-- ONI's Mono core library supplies the span types referenced by Unity 6. -->
+    <FrameworkPathOverride>$(OniManagedPath)</FrameworkPathOverride>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../PLibCore/**/*.cs" Exclude="../PLibCore/obj/**;../PLibCore/bin/**;../PLibCore/Properties/AssemblyInfo.cs" />
+    <Compile Include="../PLibActions/**/*.cs;../PLibAVC/**/*.cs;../PLibBuildings/**/*.cs;../PLibDatabase/**/*.cs;../PLibLighting/**/*.cs;../PLibOptions/**/*.cs;../PLibUI/**/*.cs"
+             Exclude="../**/obj/**;../**/bin/**" />
+    <EmbeddedResource Include="../PLibCore/translations/*.po" LogicalName="PeterHan.PLib.Core.PLibStrings.%(Filename)%(Extension)" />
+    <Reference Include="Assembly-CSharp" HintPath="$(OniManagedPath)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="Assembly-CSharp-firstpass" HintPath="$(OniManagedPath)/Assembly-CSharp-firstpass.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(OniManagedPath)/0Harmony.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
+    <Reference Include="netstandard" HintPath="$(OniManagedPath)/netstandard.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
+    <Reference Include="mscorlib" HintPath="$(OniManagedPath)/mscorlib.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
+    <Reference Include="System.Memory" HintPath="$(OniManagedPath)/System.Memory.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
+    <Reference Include="FMODUnity" HintPath="$(OniManagedPath)/FMODUnity.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(OniManagedPath)/Newtonsoft.Json.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(OniManagedPath)/UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(OniManagedPath)/UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(OniManagedPath)/UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(OniManagedPath)/UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(OniManagedPath)/Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(OniManagedPath)/UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextCoreFontEngineModule" HintPath="$(OniManagedPath)/UnityEngine.TextCoreFontEngineModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(OniManagedPath)/UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(OniManagedPath)/UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UnityWebRequestModule" HintPath="$(OniManagedPath)/UnityEngine.UnityWebRequestModule.dll" Private="false" />
+    <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" HintPath="$(OniManagedPath)/System.IO.Compression.dll" SpecificVersion="true" Private="false" />
+    <Reference Include="System.Net.Http, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" HintPath="$(OniManagedPath)/System.Net.Http.dll" SpecificVersion="true" Private="false" />
+    <None Include="../LICENSE" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
+    <None Include="consumer/Jlib.targets" Pack="true" PackagePath="build/LIghtJUNction.Jlib.targets" />
+    <None Include="consumer/Jlib.targets" Pack="true" PackagePath="buildTransitive/LIghtJUNction.Jlib.targets" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <!-- Harmony's game DLL uses Mono's Emit types; the upstream reference package
+         supplies the matching .NET Standard API without redistributing Harmony. -->
+    <PackageReference Include="Lib.Harmony.Ref" Version="2.4.2" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <Target Name="ValidateGameReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(OniManagedPath)/Assembly-CSharp.dll')" Text="Set OniManagedPath or ONI_MANAGED_PATH to your installed OxygenNotIncluded_Data/Managed directory. Game assemblies are compile-only references and are never redistributed." />
+  </Target>
+
+  <Target Name="PackageJlibMod" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net48'">
+    <PropertyGroup>
+      <JlibModDir>$(JlibArtifactDir)/mod/Jlib</JlibModDir>
+    </PropertyGroup>
+    <RemoveDir Directories="$(JlibModDir)" />
+    <MakeDir Directories="$(JlibModDir)" />
+    <ItemGroup>
+      <JlibModFiles Include="$(MSBuildProjectDirectory)/mod.yaml;$(MSBuildProjectDirectory)/mod_info.yaml;$(MSBuildProjectDirectory)/README.md;$(MSBuildProjectDirectory)/THIRD-PARTY-NOTICES.md;$(MSBuildProjectDirectory)/description.txt;$(MSBuildProjectDirectory)/description.en.txt;$(MSBuildProjectDirectory)/../LICENSE" />
+      <JlibModFiles Include="$(MSBuildProjectDirectory)/preview.png" Condition="Exists('$(MSBuildProjectDirectory)/preview.png')" />
+    </ItemGroup>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(JlibModDir)" />
+    <Copy SourceFiles="@(JlibModFiles)" DestinationFolder="$(JlibModDir)" />
+    <ZipDirectory SourceDirectory="$(JlibModDir)" DestinationFile="$(JlibArtifactDir)/Jlib.zip" Overwrite="true" />
+    <ItemGroup Condition="'$(JlibDistPath)' != ''">
+      <JlibStagedModFiles Include="$(JlibModDir)/*" />
+    </ItemGroup>
+    <MakeDir Directories="$(JlibDistPath)" Condition="'$(JlibDistPath)' != ''" />
+    <RemoveDir Directories="$(JlibDistPath)/Jlib" Condition="'$(JlibDistPath)' != ''" />
+    <Copy SourceFiles="$(JlibArtifactDir)/Jlib.zip" DestinationFolder="$(JlibDistPath)" Condition="'$(JlibDistPath)' != ''" />
+    <Copy SourceFiles="@(JlibStagedModFiles)" DestinationFolder="$(JlibDistPath)/Jlib" Condition="'$(JlibDistPath)' != ''" />
+  </Target>
+</Project>

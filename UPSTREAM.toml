@@ -1,0 +1,7 @@
+# Jlib follows the PLib project from which this repository was forked.
+schema_version = 1
+license = "MIT"
+repository = "https://github.com/LIghtJUNction/Jlib"
+mode = "following"
+upstream = "https://github.com/peterhaneve/ONIMods"
+upstream_revision = "38dfc8c9aa2e3263c5bb033a8eafa64c20785485"

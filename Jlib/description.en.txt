@@ -1,0 +1,15 @@
+[h1]Jlib — Shared prerequisite library[/h1]
+Jlib is a shared library derived from Peter Han's PLib 4.25. It provides mod options, UI, actions, buildings, database and lighting APIs to dependent Oxygen Not Included mods.
+
+[b]Installation[/b]
+Subscribe and enable Jlib in the game's Mods list, then enable its dependent mods. Place Jlib above those mods and restart the game after changing the selection. Multiple dependent mods share one Jlib.dll.
+
+Jlib itself does not alter colony gameplay. Mods by other authors that embed the original PLib can continue to do so. Jlib does not replace or remove those embedded libraries.
+
+[b]Developers[/b]
+NuGet: LIghtJUNction.Jlib. Existing PeterHan.PLib API namespaces are retained. Reference the library for compilation only; do not merge or copy Jlib.dll into a consumer's release package. Add a prerequisite check to the consumer.
+
+[b]Credits and license[/b]
+PLib source and documentation are MIT-licensed by Peter Han. Jlib preserves those notices.
+Source: https://github.com/LIghtJUNction/Jlib
+Upstream: https://github.com/peterhaneve/ONIMods

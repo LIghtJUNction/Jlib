@@ -9,5 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />
+    <Compile Include="../Jlib/ModResources.cs" Link="Source/ModResources.cs" />
   </ItemGroup>
 </Project>

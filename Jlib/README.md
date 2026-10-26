@@ -36,6 +36,39 @@ A game-free test host may explicitly set `JlibCopyLocalForHost=true` to copy
 the development library to its output. This exception is only for host tests;
 game Mod projects must keep the default shared-provider behavior.
 
+## Consumer resources
+
+`Jlib.Runtime.ModResources` resolves files from the owning Mod's `ContentPath`,
+including implementations under `implementation/`. Pass the consumer assembly
+explicitly; the bootstrap must call `JlibApi.RegisterConsumer` before use. Assemblies
+in ONI's native loaded-Mod list also work. Missing ownership throws
+`InvalidOperationException` rather than guessing from an assembly location. Each
+call looks up ownership again, so an earlier failure does not hide late registration.
+
+```csharp
+using System.Text;
+using Jlib.Runtime;
+
+var consumer = typeof(MyMod).Assembly;
+string path = ModResources.ResolvePath(consumer, "assets/icon.png");
+byte[] image = ModResources.ReadAllBytes(consumer, "assets/icon.png");
+string text = ModResources.ReadAllText(consumer, "assets/help.txt");
+string legacy = ModResources.ReadAllText(consumer, "assets/legacy.txt", Encoding.Unicode);
+```
+
+Both `/` and `\\` are accepted as separators. Empty paths, absolute paths,
+drive-relative paths, colon-containing paths, and normalized paths outside the Mod
+root or equal to the root are rejected with `ArgumentException`. The owning Mod
+must have an absolute content path. `ResolvePath` does not require a file to exist;
+reads propagate normal file system exceptions, including missing files and access
+failures. Text reads use UTF-8 by default or the supplied `Encoding`, with BOM
+detection in either case, matching `File.ReadAllText`.
+
+Containment checks compare normalized path strings. Symbolic links and Windows
+junctions can lead outside the Mod directory; this API is for trusted packaged
+resources and does not provide a file system security boundary. It neither caches
+file contents nor chooses configuration or writable-data locations.
+
 ## Build and package
 
 Install a .NET SDK and use a legitimate local game installation. Set the path

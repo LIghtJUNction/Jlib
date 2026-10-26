@@ -4,20 +4,21 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using PeterHan.PLib.Core;
 
-internal static class Program {
+internal static partial class Program {
     private static int assertions;
     private static int assemblies;
 
     private static int Main(string[] args) {
         try {
             OwnershipContract();
+            ResourceContract();
             if (args.Length != 0) {
                 if (args.Length != 3 || args[0] != "--inspect")
                     throw new ArgumentException("Usage: dotnet run --project Jlib.Tests -- [--inspect <net48/Jlib.dll> <netstandard2.1/Jlib.dll>]");
                 InspectLibrary(args[1]);
                 InspectLibrary(args[2]);
             }
-            Console.WriteLine($"PASS: {assertions} assertions; real ownership helper, no game DLLs executed.");
+            Console.WriteLine($"PASS: {assertions} assertions; real ownership and resource helpers, no game DLLs executed.");
             return 0;
         } catch (Exception error) {
             Console.Error.WriteLine(error);
@@ -110,6 +111,22 @@ internal static class Program {
         }
         Check(!metadata.AssemblyReferences.Any(handle => metadata.GetString(metadata.GetAssemblyReference(handle).Name).StartsWith("PLib", StringComparison.Ordinal)),
             path + " has no separate PLib assembly dependency");
+        var resources = metadata.TypeDefinitions.Select(metadata.GetTypeDefinition).Single(type =>
+            metadata.GetString(type.Namespace) == "Jlib.Runtime" && metadata.GetString(type.Name) == "ModResources");
+        Check((resources.Attributes & (TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed)) ==
+            (TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed), path + " public static resource API");
+        var resourceMethods = resources.GetMethods().Select(metadata.GetMethodDefinition).ToArray();
+        Equal(4, resourceMethods.Length, path + " resource method count");
+        var signatures = new List<string>();
+        foreach (var method in resourceMethods) {
+            Check((method.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.Static)) ==
+                (MethodAttributes.Public | MethodAttributes.Static), path + " public static resource method");
+            var signature = metadata.GetBlobReader(method.Signature);
+            signature.ReadSignatureHeader();
+            signatures.Add(metadata.GetString(method.Name) + "/" + signature.ReadCompressedInteger());
+        }
+        Equal("ReadAllBytes/2,ReadAllText/2,ReadAllText/3,ResolvePath/2",
+            string.Join(",", signatures.OrderBy(value => value, StringComparer.Ordinal)), path + " resource overloads");
         Console.WriteLine("Inspected metadata only: " + Path.GetFullPath(path));
     }
 

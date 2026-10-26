@@ -1,3 +1,21 @@
+# Jlib
+
+Jlib is a standalone shared PLib-compatible prerequisite mod for Oxygen Not
+Included. It is a fork of Peter Han's PLib 4.25. Multiple dependent mods use
+one enabled `Jlib.dll`, preserving the `PeterHan.PLib.*` API namespaces.
+
+See **[Jlib's installation, API, and build guide](Jlib/README.md)**.
+The development package is `LIghtJUNction.Jlib`; the Mod static ID is
+`LIghtJUNction.Jlib`. Build `Jlib/Jlib.csproj` against your own installed game.
+The Mod ZIP and NuGet packages are written to `artifacts/`.
+
+Inherited code remains MIT-licensed by Peter Han, and Jlib additions use MIT.
+See [LICENSE](LICENSE), [third-party notices](Jlib/THIRD-PARTY-NOTICES.md), and
+[the upstream declaration](UPSTREAM.toml). The upstream documentation below is
+retained for reference; its releases and Workshop links belong to Peter Han.
+
+---
+
 # Peter Han&#39;s Mods for Oxygen Not Included
 
 Last tested on game version: **U59-737790**

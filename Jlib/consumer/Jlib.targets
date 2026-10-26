@@ -1,0 +1,8 @@
+<Project>
+  <Target Name="JlibPreventConsumerEmbedding" AfterTargets="ResolveAssemblyReferences" Condition="'$(JlibCopyLocalForHost)' != 'true'">
+    <ItemGroup>
+      <!-- The enabled standalone ONI mod supplies the shared assembly at runtime. -->
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)' == 'Jlib.dll'" />
+    </ItemGroup>
+  </Target>
+</Project>

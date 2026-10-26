@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Jlib shared mod library</title>
+  <desc id="desc">An original J monogram connects three small modules above the Jlib wordmark.</desc>
+  <defs>
+    <linearGradient id="backdrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#182b32"/>
+      <stop offset="1" stop-color="#101e25"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bde5cb"/>
+      <stop offset="1" stop-color="#82bca9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#backdrop)"/>
+  <rect x="56" y="56" width="912" height="912" rx="52" fill="none" stroke="#bde5cb" stroke-opacity=".15" stroke-width="2"/>
+  <g fill="none" stroke="#8ab7a6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M356 381H253V255"/>
+    <path d="M668 381h103V255"/>
+    <path d="M512 514v71h200"/>
+  </g>
+  <g fill="#243c43" stroke="#8ab7a6" stroke-width="5">
+    <rect x="198" y="161" width="110" height="110" rx="27"/>
+    <rect x="716" y="161" width="110" height="110" rx="27"/>
+    <rect x="711" y="530" width="110" height="110" rx="27"/>
+  </g>
+  <g fill="#d4e3d9">
+    <rect x="235" y="198" width="36" height="36" rx="7"/>
+    <rect x="753" y="198" width="36" height="36" rx="7"/>
+    <rect x="748" y="567" width="36" height="36" rx="7"/>
+  </g>
+  <rect x="356" y="225" width="312" height="312" rx="82" fill="url(#core)"/>
+  <path d="M449 312h104v112c0 36-18 55-52 55-31 0-51-19-51-49" fill="none" stroke="#163039" stroke-width="39" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="598" cy="288" r="13" fill="#eff7ea"/>
+  <text x="512" y="802" text-anchor="middle" fill="#f2f3e9" font-family="DejaVu Sans, sans-serif" font-size="156" font-weight="700" letter-spacing="-8">Jlib</text>
+  <text x="512" y="871" text-anchor="middle" fill="#a7c1b8" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="500" letter-spacing="5">SHARED MOD LIBRARY</text>
+</svg>

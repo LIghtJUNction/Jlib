@@ -1,0 +1,6 @@
+<Project>
+  <!-- Use the parent OniMods installation setting when checked out as its submodule.
+       Standalone builds remain isolated from upstream's Windows-specific properties. -->
+  <Import Project="../../../Directory.Build.props"
+          Condition="Exists('../../../onim.toml') and Exists('../../../mods/OniMcp/OniMcp.csproj') and Exists('../../../Directory.Build.props')" />
+</Project>

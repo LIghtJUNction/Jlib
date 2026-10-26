@@ -68,4 +68,5 @@ provider and consumers in a real game session.
 
 Inherited PLib source and original Jlib code are MIT-licensed. See `LICENSE` and
 `THIRD-PARTY-NOTICES.md`. No game assemblies or inherited artwork are distributed
-in the Jlib packages.
+in the Jlib packages. Git source archives also exclude the inherited `Lib/*.dll`
+reference assemblies; build Jlib against your own installed game.

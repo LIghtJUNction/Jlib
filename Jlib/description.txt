@@ -7,7 +7,7 @@ Jlib 是从 Peter Han 的 PLib 4.25 派生的共享库，为依赖它的《缺�
 Jlib 本身不改变殖民地玩法。其他作者使用原版内嵌 PLib 的 Mod 无需迁移。本项目不会替换或删除它们的 PLib。
 
 [b]开发者[/b]
-NuGet：LIghtJUNction.Jlib。API 保留 PeterHan.PLib 命名空间。消费者应以编译期引用方式使用，禁止把 Jlib.dll 合并或复制进各自的发行包；请配置前置依赖检查。
+NuGet：LIghtJUNction.Jlib。API 保留 PeterHan.PLib 命名空间。消费者应以编译期引用方式使用，禁止把 Jlib.dll 合并或复制进各自的发行包。加载自己的实现程序集之前，请检查已启用 Jlib 的 ABI。
 
 [b]来源与授权[/b]
 PLib 源码与文档由 Peter Han 按 MIT 授权；Jlib 保留原始版权与许可。源码：https://github.com/LIghtJUNction/Jlib

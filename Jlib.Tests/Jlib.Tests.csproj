@@ -8,6 +8,8 @@
     <NoWarn>$(NoWarn);CS8600;CS8602;CS8603;CS8604;CS8625</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Jlib/Runtime/JlibContract.cs" Link="Source/JlibContract.cs" />
+    <Compile Include="../Jlib/JlibApi.cs" Link="Source/JlibApi.cs" />
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />
   </ItemGroup>
 </Project>

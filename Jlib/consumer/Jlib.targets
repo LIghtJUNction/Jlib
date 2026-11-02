@@ -1,8 +1,32 @@
 <Project>
+  <!--
+    Direct package references import this file from build/.
+    Transitive references import the same file from buildTransitive/ and must not
+    compile the contract into every downstream project.
+  -->
+  <PropertyGroup>
+    <JlibTargetsImportedFromTransitive Condition="$([System.String]::Copy('$(MSBuildThisFileDirectory)').Contains('buildTransitive'))">true</JlibTargetsImportedFromTransitive>
+    <JlibContractSource Condition="'$(JlibContractSource)' == '' and Exists('$(MSBuildThisFileDirectory)JlibContract.cs')">$(MSBuildThisFileDirectory)JlibContract.cs</JlibContractSource>
+    <JlibContractSource Condition="'$(JlibContractSource)' == '' and Exists('$(MSBuildThisFileDirectory)..\Runtime\JlibContract.cs')">$(MSBuildThisFileDirectory)..\Runtime\JlibContract.cs</JlibContractSource>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(JlibCompileContractIntoBootstrap)' == 'true' and '$(JlibTargetsImportedFromTransitive)' != 'true' and '$(JlibContractSource)' != ''">
+    <!-- Bootstrap projects opt in. They must not also compile against Jlib.Runtime types from Jlib.dll. -->
+    <Compile Include="$(JlibContractSource)" Link="Jlib/JlibContract.cs" />
+  </ItemGroup>
+
+  <Target Name="JlibRequireBootstrapContract" BeforeTargets="CoreCompile" Condition="'$(JlibCompileContractIntoBootstrap)' == 'true' and '$(JlibTargetsImportedFromTransitive)' != 'true'">
+    <Error Condition="'$(JlibContractSource)' == '' or !Exists('$(JlibContractSource)')" Text="JlibCompileContractIntoBootstrap requires Jlib/Runtime/JlibContract.cs or the JlibContract.cs file shipped beside the NuGet targets." />
+  </Target>
+
   <Target Name="JlibPreventConsumerEmbedding" AfterTargets="ResolveAssemblyReferences" Condition="'$(JlibCopyLocalForHost)' != 'true'">
     <ItemGroup>
       <!-- The enabled standalone ONI mod supplies the shared assembly at runtime. -->
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Filename)%(ReferenceCopyLocalPaths.Extension)' == 'Jlib.dll'" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="JlibWarnHostCopyLocal" BeforeTargets="ResolveAssemblyReferences" Condition="'$(JlibCopyLocalForHost)' == 'true'">
+    <Warning Text="JlibCopyLocalForHost is set, so Jlib.dll will be copied beside this project. Game mods must leave it unset and use the enabled LIghtJUNction.Jlib provider." />
   </Target>
 </Project>

@@ -7,6 +7,8 @@ namespace Jlib.Runtime {
         public override void OnLoad(Harmony harmony) {
             base.OnLoad(harmony);
             PUtil.InitLibrary();
+            PUtil.LogDebug("Jlib provider " + JlibApi.StaticId + " " + JlibApi.Version +
+                " ABI " + JlibApi.AbiVersion + " protocol " + JlibApi.PLibVersion);
         }
     }
 }

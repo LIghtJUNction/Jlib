@@ -1,3 +1,3 @@
-# Build Jlib against a legitimate local game installation; source archives do
-# not redistribute the inherited upstream reference assemblies.
-/Lib/*.dll export-ignore
+# Source archives never redistribute compiled assemblies.
+*.dll export-ignore
+*.exe export-ignore

@@ -70,6 +70,11 @@ A game-free test host may explicitly set `JlibCopyLocalForHost=true` to copy
 the development library to its output. This exception is only for host tests;
 game Mod projects must keep the default shared-provider behavior.
 
+The source-tree version and the latest published NuGet version can differ. Check
+[NuGet](https://www.nuget.org/packages/LIghtJUNction.Jlib) before selecting a
+package version; new APIs described above require a provider built from this
+source version or a matching published release.
+
 ## Build and package
 
 Install a .NET SDK and use a legitimate local game installation. Set the path
@@ -86,12 +91,10 @@ dotnet pack Jlib/Jlib.csproj -c Release --no-build -p:OniManagedPath=/path/to/Ox
 and never copied or packed. The standalone game package uses the `net48` build;
 `netstandard2.1` is also available to development and host-test consumers.
 
-The inherited `Lib/` folder is enough to compile `netstandard2.1` and inspect that
-assembly. It is not enough for the shipping `net48` Mod ZIP: `Lib/` has no
-`mscorlib.dll`, and a desktop .NET Framework `mscorlib` cannot replace the game's
-copy because the UI code uses the game's `ReadOnlySpan`. Point `OniManagedPath`
-at an installed `OxygenNotIncluded_Data/Managed` directory for `net48`, the Mod
-ZIP, and the two-target NuGet package.
+Game and Unity reference assemblies are not stored in this repository. Both target
+frameworks use your installed game's `OxygenNotIncluded_Data/Managed` directory.
+A desktop .NET Framework `mscorlib` is not a substitute for the game's copy:
+Jlib's UI code uses the game's `ReadOnlySpan`.
 
 `JlibDistPath` optionally mirrors the Mod ZIP and directory for an external build
 tool. When this project is checked out at `OniMods/libs/Jlib`, it detects the
@@ -131,5 +134,5 @@ do not start Oxygen Not Included and do not execute game assemblies.
 
 Inherited PLib source and original Jlib code are MIT-licensed. See `LICENSE` and
 `THIRD-PARTY-NOTICES.md`. No game assemblies or inherited artwork are distributed
-in the Jlib packages. Git source archives also exclude the inherited `Lib/*.dll`
-reference assemblies; build Jlib against your own installed game.
+in the Jlib packages or stored in this repository. Git source archives exclude
+compiled assemblies; build Jlib against your own installed game.

@@ -75,7 +75,7 @@ internal static class SourceContract {
         Program.Equal(Jlib.Runtime.JlibContract.ExpectedPLibVersion, Jlib.Runtime.JlibApi.PLibVersion, "protocol re-export");
 
         var attributes = File.ReadAllText(Path.Combine(root, ".gitattributes"));
-        Program.Check(attributes.Contains("/Lib/*.dll export-ignore", StringComparison.Ordinal), "source archives omit inherited reference DLLs");
+        Program.Check(attributes.Contains("*.dll export-ignore", StringComparison.Ordinal), "source archives omit compiled DLLs");
         var notices = File.ReadAllText(Path.Combine(root, "Jlib", "THIRD-PARTY-NOTICES.md"));
         var upstream = File.ReadAllText(Path.Combine(root, "UPSTREAM.toml"));
         var revision = upstream.Split('\n').Select(line => line.Trim()).First(line => line.StartsWith("upstream_revision", StringComparison.Ordinal));
@@ -120,12 +120,12 @@ internal static class SourceContract {
             inspected++;
         }
         if (inspected == 0)
-            Console.WriteLine("SKIP: Jlib/bin/Release/*/Jlib.dll is absent. netstandard2.1 can build against the inherited Lib references; the net48 Mod build needs the game's mscorlib.");
+            Console.WriteLine("SKIP: Jlib/bin/Release/*/Jlib.dll is absent. Build both targets against your installed game's Managed directory before inspecting assemblies.");
         var zip = Path.Combine(root, "artifacts", "Jlib.zip");
         if (File.Exists(zip))
             InspectPackage(zip);
         else
-            Console.WriteLine("SKIP: artifacts/Jlib.zip is absent. The Mod ZIP is the net48 build, and this checkout's Lib folder has no mscorlib.dll. A desktop .NET Framework mscorlib is not a substitute: Jlib's UI code needs the game's ReadOnlySpan.");
+            Console.WriteLine("SKIP: artifacts/Jlib.zip is absent. Build the net48 target against your installed game's Managed directory to create the Mod ZIP.");
         var nuget = Path.Combine(root, "artifacts", "nuget");
         if (Directory.Exists(nuget)) {
             var packages = Directory.GetFiles(nuget, "*.nupkg");

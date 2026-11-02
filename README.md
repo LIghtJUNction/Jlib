@@ -5,9 +5,15 @@ Included. It is a fork of Peter Han's PLib 4.25. Multiple dependent mods use
 one enabled `Jlib.dll`, preserving the `PeterHan.PLib.*` API namespaces.
 
 See **[Jlib's installation, API, and build guide](Jlib/README.md)**.
-The development package is `LIghtJUNction.Jlib`; the Mod static ID is
+The development package is `LIghtJUNction.Jlib` 0.2.0; the Mod static ID is
 `LIghtJUNction.Jlib`. Build `Jlib/Jlib.csproj` against your own installed game.
 The Mod ZIP and NuGet packages are written to `artifacts/`.
+
+Game-free contract tests do not need a game install:
+
+```sh
+dotnet run --project Jlib.Tests -c Release
+```
 
 Inherited code remains MIT-licensed by Peter Han, and Jlib additions use MIT.
 See [LICENSE](LICENSE), [third-party notices](Jlib/THIRD-PARTY-NOTICES.md), and

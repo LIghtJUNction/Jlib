@@ -10,14 +10,13 @@ internal static class Program {
 
     private static int Main(string[] args) {
         try {
+            var loaded = Jlib.Runtime.JlibApi.DiscoverProviders(Jlib.Runtime.JlibApi.AbiVersion, Jlib.Runtime.JlibApi.Version);
+            Equal(Jlib.Runtime.JlibCompatibilityStatus.Compatible, loaded.Status, "the test host sees one real JlibApi");
+            Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
             OwnershipContract();
-            if (args.Length != 0) {
-                if (args.Length != 3 || args[0] != "--inspect")
-                    throw new ArgumentException("Usage: dotnet run --project Jlib.Tests -- [--inspect <net48/Jlib.dll> <netstandard2.1/Jlib.dll>]");
-                InspectLibrary(args[1]);
-                InspectLibrary(args[2]);
-            }
-            Console.WriteLine($"PASS: {assertions} assertions; real ownership helper, no game DLLs executed.");
+            ContractCoverage.Run();
+            SourceContract.Run(args);
+            Console.WriteLine($"PASS: {assertions} assertions; real ownership and contract helpers, no game DLLs executed.");
             return 0;
         } catch (Exception error) {
             Console.Error.WriteLine(error);
@@ -84,23 +83,32 @@ internal static class Program {
         Equal("/mods/explicit-owner", PUtil.GetRegisteredModPath(formerlyNative), "explicit precedence uses registered root");
     }
 
-    private static Assembly NewAssembly() => AssemblyBuilder.DefineDynamicAssembly(
+    internal static Assembly NewAssembly() => AssemblyBuilder.DefineDynamicAssembly(
         new AssemblyName("Jlib.OwnershipFixture." + ++assemblies), AssemblyBuilderAccess.RunAndCollect);
 
-    private static KMod.Mod NewMod(string path) => new() { ContentPath = path };
+    internal static KMod.Mod NewMod(string path) => new() { ContentPath = path };
 
-    private static void InspectLibrary(string path) {
+    internal static void InspectLibrary(string path) {
         using var stream = File.OpenRead(path);
         using var image = new PEReader(stream);
         var metadata = image.GetMetadataReader();
         var assembly = metadata.GetAssemblyDefinition();
         Equal("Jlib", metadata.GetString(assembly.Name), path + " assembly name");
-        Equal(new Version(0, 1, 0, 0), assembly.Version, path + " assembly version");
-        Equal(1, ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "AbiVersion"), path + " ABI");
-        Equal("LIghtJUNction.Jlib", ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "StaticId"), path + " static ID");
-        Equal("0.1.0", ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "Version"), path + " library version");
-        Equal("4.25.0.0", ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "PLibVersion"), path + " protocol identity");
-        Equal("4.25.0.0", ReadConstant(metadata, "PeterHan.PLib", "PVersion", "VERSION"), path + " PLib arbitration version");
+        Equal(new Version(Jlib.Runtime.JlibApi.Version + ".0"), assembly.Version, path + " assembly version");
+        Equal(Jlib.Runtime.JlibApi.AbiVersion, ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "AbiVersion"), path + " ABI");
+        Equal(Jlib.Runtime.JlibApi.StaticId, ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "StaticId"), path + " static ID");
+        Equal(Jlib.Runtime.JlibApi.Version, ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "Version"), path + " library version");
+        Equal(Jlib.Runtime.JlibApi.PLibVersion, ReadConstant(metadata, "Jlib.Runtime", "JlibApi", "PLibVersion"), path + " protocol identity");
+        Equal(Jlib.Runtime.JlibApi.PLibVersion, ReadConstant(metadata, "PeterHan.PLib", "PVersion", "VERSION"), path + " PLib arbitration version");
+        Equal(Jlib.Runtime.JlibContract.ExpectedAbi, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedAbi"), path + " contract ABI");
+        Equal(Jlib.Runtime.JlibContract.ExpectedStaticId, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedStaticId"), path + " contract static ID");
+        Equal(Jlib.Runtime.JlibContract.ExpectedPLibVersion, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedPLibVersion"), path + " contract protocol");
+        foreach (var method in new[] { "CheckCompatibility", "RequireCompatibility", "DiscoverProviders", "RegisterConsumer" })
+            Check(HasMethod(metadata, "Jlib.Runtime", "JlibApi", method), path + " JlibApi." + method);
+        foreach (var method in new[] { "Evaluate", "Inspect", "TryParseVersion" })
+            Check(HasMethod(metadata, "Jlib.Runtime", "JlibContract", method), path + " JlibContract." + method);
+        Check(HasType(metadata, "Jlib.Runtime", "JlibCompatibility"), path + " compatibility result");
+        Check(HasType(metadata, "Jlib.Runtime", "JlibCompatibilityException"), path + " compatibility exception");
         foreach (var locale in new[] { "zh", "ru", "fr" }) {
             var resourceName = "PeterHan.PLib.Core.PLibStrings." + locale + ".po";
             Check(metadata.ManifestResources.Any(handle => {
@@ -134,16 +142,38 @@ internal static class Program {
         throw new InvalidOperationException("Required contract field missing: " + ns + "." + typeName + "." + fieldName);
     }
 
-    private static void Equal(object? expected, object? actual, string scenario) =>
+    private static bool HasType(MetadataReader metadata, string ns, string typeName) {
+        foreach (var handle in metadata.TypeDefinitions) {
+            var type = metadata.GetTypeDefinition(handle);
+            if (metadata.GetString(type.Namespace) == ns && metadata.GetString(type.Name) == typeName)
+                return true;
+        }
+        return false;
+    }
+
+    private static bool HasMethod(MetadataReader metadata, string ns, string typeName, string methodName) {
+        foreach (var handle in metadata.TypeDefinitions) {
+            var type = metadata.GetTypeDefinition(handle);
+            if (metadata.GetString(type.Namespace) != ns || metadata.GetString(type.Name) != typeName)
+                continue;
+            foreach (var methodHandle in type.GetMethods()) {
+                if (metadata.GetString(metadata.GetMethodDefinition(methodHandle).Name) == methodName)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    internal static void Equal(object? expected, object? actual, string scenario) =>
         Check(Equals(expected, actual), scenario + $" (expected {expected ?? "null"}, actual {actual ?? "null"})");
 
-    private static void Check(bool condition, string scenario) {
+    internal static void Check(bool condition, string scenario) {
         assertions++;
         if (!condition)
             throw new InvalidOperationException("FAIL: " + scenario);
     }
 
-    private static void Throws<T>(Action action, string scenario, string? parameter = null) where T : Exception {
+    internal static void Throws<T>(Action action, string scenario, string? parameter = null) where T : Exception {
         try {
             action();
         } catch (T error) {

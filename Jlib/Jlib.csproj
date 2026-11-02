@@ -3,9 +3,12 @@
     <TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
     <AssemblyName>Jlib</AssemblyName>
     <RootNamespace>Jlib</RootNamespace>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.2.0</Version>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <!-- Package identity stays on the Jlib version. PLibCore's AssemblyInfo.cs is excluded
+         so the inherited 4.25 protocol file version is not applied to Jlib.dll. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <LangVersion>12.0</LangVersion>
     <Nullable>disable</Nullable>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -16,7 +19,7 @@
     <Title>Jlib shared library for Oxygen Not Included</Title>
     <Authors>Peter Han;LIghtJUNction</Authors>
     <Copyright>Copyright Peter Han and Jlib contributors</Copyright>
-    <Description>Standalone shared PLib-compatible library for Oxygen Not Included mods. Install and enable the Jlib Workshop mod once. Consumer mods reference Jlib.dll without embedding it.</Description>
+    <Description>Standalone shared PLib-compatible library for Oxygen Not Included mods. Install and enable the Jlib mod once. Consumer mods reference Jlib.dll without embedding it, and can check ABI 1 and the library version before loading their implementation.</Description>
     <PackageProjectUrl>https://github.com/LIghtJUNction/Jlib</PackageProjectUrl>
     <RepositoryUrl>https://github.com/LIghtJUNction/Jlib</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -64,6 +67,7 @@
     <None Include="THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
     <None Include="consumer/Jlib.targets" Pack="true" PackagePath="build/LIghtJUNction.Jlib.targets" />
     <None Include="consumer/Jlib.targets" Pack="true" PackagePath="buildTransitive/LIghtJUNction.Jlib.targets" />
+    <None Include="Runtime/JlibContract.cs" Pack="true" PackagePath="build/JlibContract.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">

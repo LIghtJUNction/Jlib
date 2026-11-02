@@ -7,7 +7,7 @@ Subscribe and enable Jlib in the game's Mods list, then enable its dependent mod
 Jlib itself does not alter colony gameplay. Mods by other authors that embed the original PLib can continue to do so. Jlib does not replace or remove those embedded libraries.
 
 [b]Developers[/b]
-NuGet: LIghtJUNction.Jlib. Existing PeterHan.PLib API namespaces are retained. Reference the library for compilation only; do not merge or copy Jlib.dll into a consumer's release package. Add a prerequisite check to the consumer.
+NuGet: LIghtJUNction.Jlib. Existing PeterHan.PLib API namespaces are retained. Reference the library for compilation only; do not merge or copy Jlib.dll into a consumer's release package. Check the enabled Jlib provider's ABI before loading a consumer implementation.
 
 [b]Credits and license[/b]
 PLib source and documentation are MIT-licensed by Peter Han. Jlib preserves those notices.

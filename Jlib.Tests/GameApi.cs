@@ -4,7 +4,8 @@ using System.Reflection;
 // This host executable never references or executes an installed game assembly.
 namespace KMod {
     public sealed class Mod {
-        public required string ContentPath { get; init; }
+        public string? ContentPath { get; set; }
+        public string? staticID { get; set; }
         public LoadedModData? loaded_mod_data;
     }
 

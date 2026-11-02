@@ -7,6 +7,18 @@ on:
     branches: [ "main" ]
 
 jobs:
+  jlib-contract:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Build Jlib netstandard2.1 against inherited reference assemblies
+      run: dotnet build Jlib/Jlib.csproj -c Release -f netstandard2.1 -p:OniManagedPath=${{ github.workspace }}/Lib
+    - name: Run game-free Jlib contract tests
+      run: dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release
+
   build:
     runs-on: windows-latest
 

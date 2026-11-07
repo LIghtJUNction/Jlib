@@ -4,7 +4,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using PeterHan.PLib.Core;
 
-internal static class Program {
+internal static partial class Program {
     private static int assertions;
     private static int assemblies;
 
@@ -14,9 +14,10 @@ internal static class Program {
             Equal(Jlib.Runtime.JlibCompatibilityStatus.Compatible, loaded.Status, "the test host sees one real JlibApi");
             Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
             OwnershipContract();
+            ResourceContract();
             ContractCoverage.Run();
             SourceContract.Run(args);
-            Console.WriteLine($"PASS: {assertions} assertions; real ownership and contract helpers, no game DLLs executed.");
+            Console.WriteLine($"PASS: {assertions} assertions; real ownership, resource, and contract helpers, no game DLLs executed.");
             return 0;
         } catch (Exception error) {
             Console.Error.WriteLine(error);
@@ -81,6 +82,16 @@ internal static class Program {
         PUtil.RegisterModAssembly(formerlyNative, registeredAfterNative);
         Equal(registeredAfterNative, PUtil.GetModInfo(formerlyNative), "explicit registration takes precedence over native listing");
         Equal("/mods/explicit-owner", PUtil.GetRegisteredModPath(formerlyNative), "explicit precedence uses registered root");
+        Equal("/mods/CycleTrim\n/mods/OniOnline\n/mods/explicit-owner",
+            string.Join("\n", PUtil.DependentMods()),
+            "dependent list names explicit owners and skips the unregistered native copy");
+        var selfMod = new KMod.Mod { ContentPath = "/mods/Jlib", staticID = Jlib.Runtime.JlibApi.StaticId, title = "Jlib" };
+        Global.Instance.modManager.mods.Add(selfMod);
+        owner.title = "CycleTrim";
+        owner.staticID = "LIghtJUNction.CycleTrim";
+        Equal("/mods/OniOnline\n/mods/explicit-owner\nCycleTrim (LIghtJUNction.CycleTrim)",
+            string.Join("\n", PUtil.DependentMods()),
+            "dependent list formats title+staticID and excludes Jlib itself");
     }
 
     internal static Assembly NewAssembly() => AssemblyBuilder.DefineDynamicAssembly(
@@ -109,6 +120,25 @@ internal static class Program {
             Check(HasMethod(metadata, "Jlib.Runtime", "JlibContract", method), path + " JlibContract." + method);
         Check(HasType(metadata, "Jlib.Runtime", "JlibCompatibility"), path + " compatibility result");
         Check(HasType(metadata, "Jlib.Runtime", "JlibCompatibilityException"), path + " compatibility exception");
+        Check(HasType(metadata, "Jlib.Runtime", "JlibOptions"), path + " JlibOptions type");
+        Check(HasMethod(metadata, "PeterHan.PLib.Core", "PUtil", "DependentMods"), path + " PUtil.DependentMods");
+        Check(HasMethod(metadata, "PeterHan.PLib.Options", "POptions", "RefreshRegistered"), path + " POptions.RefreshRegistered");
+        var resources = metadata.TypeDefinitions.Select(metadata.GetTypeDefinition).Single(type =>
+            metadata.GetString(type.Namespace) == "Jlib.Runtime" && metadata.GetString(type.Name) == "ModResources");
+        Check((resources.Attributes & (TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed)) ==
+            (TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed), path + " public static resource API");
+        var resourceMethods = resources.GetMethods().Select(metadata.GetMethodDefinition).ToArray();
+        Equal(4, resourceMethods.Length, path + " resource method count");
+        var signatures = new List<string>();
+        foreach (var method in resourceMethods) {
+            Check((method.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.Static)) ==
+                (MethodAttributes.Public | MethodAttributes.Static), path + " public static resource method");
+            var signature = metadata.GetBlobReader(method.Signature);
+            signature.ReadSignatureHeader();
+            signatures.Add(metadata.GetString(method.Name) + "/" + signature.ReadCompressedInteger());
+        }
+        Equal("ReadAllBytes/2,ReadAllText/2,ReadAllText/3,ResolvePath/2",
+            string.Join(",", signatures.OrderBy(value => value, StringComparer.Ordinal)), path + " resource overloads");
         foreach (var locale in new[] { "zh", "ru", "fr" }) {
             var resourceName = "PeterHan.PLib.Core.PLibStrings." + locale + ".po";
             Check(metadata.ManifestResources.Any(handle => {

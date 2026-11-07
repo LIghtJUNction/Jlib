@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="../Jlib/Runtime/JlibContract.cs" Link="Source/JlibContract.cs" />
     <Compile Include="../Jlib/JlibApi.cs" Link="Source/JlibApi.cs" />
+    <Compile Include="../Jlib/ModResources.cs" Link="Source/ModResources.cs" />
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Peter Han
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without
@@ -71,6 +71,7 @@ namespace PeterHan.PLib.Options {
 		private static void BuildDisplay_Postfix(GameObject ___entryPrefab,
 				System.Collections.IEnumerable ___displayedMods) {
 			if (Instance != null) {
+				Instance.RefreshRegisteredCore();
 				int index = 0;
 				// Harmony does not check the type at all on accessing private fields with ___
 				foreach (var displayedMod in ___displayedMods)
@@ -294,25 +295,42 @@ namespace PeterHan.PLib.Options {
 		public override void Initialize(Harmony plibInstance) {
 			Instance = this;
 
-			registered.Clear();
 			SetSharedData(PUtil.CreateAssemblyToModTable());
-			foreach (var optionsProvider in PRegistry.Instance.GetAllComponents(ID)) {
-				var options = optionsProvider.GetInstanceData<IDictionary<string, Type>>();
-				if (options != null)
-					// Map the static ID to the mod's option type and fire the correct handler
-					foreach (var pair in options) {
-						string label = pair.Key;
-						if (registered.ContainsKey(label))
-							PUtil.LogWarning("Mod {0} already has options registered - only one option type per mod".
-								F(label ?? "?"));
-						else
-							registered.Add(label, new ModOptionsHandler(optionsProvider,
-								pair.Value));
-					}
-			}
+			RefreshRegisteredCore();
 
 			plibInstance.Patch(typeof(ModsScreen), "BuildDisplay", postfix: PatchMethod(nameof(
 				BuildDisplay_Postfix)));
+		}
+
+		/// <summary>
+		/// Rebuilds the options lookup table for the active <see cref="POptions"/> instance
+		/// from all registered options providers, including mods registered after initial startup.
+		/// </summary>
+		public static void RefreshRegistered() {
+			Instance?.RefreshRegisteredCore();
+		}
+
+		private void RefreshRegisteredCore() {
+			registered.Clear();
+			var providers = PRegistry.Instance?.GetAllComponents(ID);
+			if (providers == null)
+				return;
+			foreach (var optionsProvider in providers) {
+				var options = optionsProvider?.GetInstanceData<IDictionary<string, Type>>();
+				if (options == null)
+					continue;
+				// Map the static ID to the mod's option type and fire the correct handler
+				foreach (var pair in options) {
+					if (string.IsNullOrEmpty(pair.Key) || pair.Value == null)
+						continue;
+					if (registered.ContainsKey(pair.Key))
+						PUtil.LogWarning("Mod {0} already has options registered - only one option type per mod".
+							F(pair.Key));
+					else
+						registered.Add(pair.Key, new ModOptionsHandler(optionsProvider,
+							pair.Value));
+				}
+			}
 		}
 
 		public override void Process(uint operation, object args) {
@@ -353,6 +371,8 @@ namespace PeterHan.PLib.Options {
 					FullName));
 			else {
 				modOptions.Add(id, optionsType);
+				if (Instance != null && !Instance.registered.ContainsKey(id))
+					Instance.registered.Add(id, new ModOptionsHandler(this, optionsType));
 				PUtil.LogDebug("Registered mod options class {0} for {1}".F(optionsType.
 					FullName, id));
 			}

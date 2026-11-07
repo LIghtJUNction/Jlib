@@ -4,6 +4,8 @@ Jlib is a standalone shared library mod for **Oxygen Not Included**, forked from
 [Peter Han's PLib](https://github.com/peterhaneve/ONIMods). It keeps the
 `PeterHan.PLib.*` source API while supplying one `Jlib.dll` to its consumers.
 
+Jlib ships with [OniMods](https://github.com/LIghtJUNction/OniMods). onim is the toolchain in that repo. It takes an Oxygen Not Included mod straight through development, testing, and Workshop publishing: `onim dev` tries it in game, `onim build` packs it, and `onim publish` sends it to Steam.
+
 ## Install / 安装
 
 Install and enable the Jlib prerequisite mod, place it above dependent mods,
@@ -74,6 +76,44 @@ The source-tree version and the latest published NuGet version can differ. Check
 [NuGet](https://www.nuget.org/packages/LIghtJUNction.Jlib) before selecting a
 package version; new APIs described above require a provider built from this
 source version or a matching published release.
+
+## Consumer resources & options
+
+`Jlib.Runtime.ModResources` resolves files from the owning Mod's `ContentPath`,
+including implementations under `implementation/`. Pass the consumer assembly
+explicitly; the bootstrap must call `JlibApi.RegisterConsumer` before use. Assemblies
+in ONI's native loaded-Mod list also work. Missing ownership throws
+`InvalidOperationException` rather than guessing from an assembly location. Each
+call looks up ownership again, so an earlier failure does not hide late registration.
+
+```csharp
+using System.Text;
+using Jlib.Runtime;
+
+var consumer = typeof(MyMod).Assembly;
+string path = ModResources.ResolvePath(consumer, "assets/icon.png");
+byte[] image = ModResources.ReadAllBytes(consumer, "assets/icon.png");
+string text = ModResources.ReadAllText(consumer, "assets/help.txt");
+string legacy = ModResources.ReadAllText(consumer, "assets/legacy.txt", Encoding.Unicode);
+```
+
+Both `/` and `\\` are accepted as separators. Empty paths, absolute paths,
+drive-relative paths, colon-containing paths, and normalized paths outside the Mod
+root or equal to the root are rejected with `ArgumentException`. The owning Mod
+must have an absolute content path. `ResolvePath` does not require a file to exist;
+reads propagate normal file system exceptions, including missing files and access
+failures. Text reads use UTF-8 by default or the supplied `Encoding`, with BOM
+detection in either case, matching `File.ReadAllText`.
+
+Containment checks compare normalized path strings. Symbolic links and Windows
+junctions can lead outside the Mod directory; this API is for trusted packaged
+resources and does not provide a file system security boundary. It neither caches
+file contents nor chooses configuration or writable-data locations.
+
+`PeterHan.PLib.Core.PUtil.DependentMods()` returns the sorted list of consumer mods
+registered through `JlibApi.RegisterConsumer` or referencing `Jlib.dll` (excluding
+Jlib itself), and `PeterHan.PLib.Options.POptions.RefreshRegistered()` refreshes the
+Mods screen options table for late-registered consumer assemblies.
 
 ## Build and package
 

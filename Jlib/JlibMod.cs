@@ -1,5 +1,6 @@
 using HarmonyLib;
 using PeterHan.PLib.Core;
+using PeterHan.PLib.Options;
 
 namespace Jlib.Runtime {
     /// <summary>The single installed provider of the PLib-compatible shared assembly.</summary>
@@ -7,6 +8,7 @@ namespace Jlib.Runtime {
         public override void OnLoad(Harmony harmony) {
             base.OnLoad(harmony);
             PUtil.InitLibrary();
+            new POptions().RegisterOptions(this, typeof(JlibOptions));
             PUtil.LogDebug("Jlib provider " + JlibApi.StaticId + " " + JlibApi.Version +
                 " ABI " + JlibApi.AbiVersion + " protocol " + JlibApi.PLibVersion);
         }

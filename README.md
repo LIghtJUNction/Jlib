@@ -6,6 +6,23 @@ Jlib 是《缺氧》（Oxygen Not Included）的共享前置库，基于
 
 本仓库只包含 Jlib、它需要的 PLib 库模块、测试和打包配置。
 
+Jlib 随 [OniMods](https://github.com/LIghtJUNction/OniMods) 一起发布。onim 是这个仓库里的工具，把缺氧 Mod 的开发、测试和创意工坊发布连成一条直线：`onim dev` 放进游戏里试，`onim build` 打包，`onim publish` 发到 Steam。
+
+## Jlib 与原版 PLib 的定位与差异
+
+[Peter Han 的 PLib](https://github.com/peterhaneve/ONIMods) 是《缺氧》Mod 社区极其优秀且广泛使用的先驱基础库，官方在 NuGet 上提供了标准包（[`PLib`](https://www.nuget.org/packages/PLib/)）。
+
+Jlib 继承并保留了 PLib 的完整公开 API 与 `PeterHan.PLib.*` 命名空间，两者最核心的差异在于**部署集成范式**以及针对现代工程流的特性补充：
+
+| 维度 | 原版 PLib (Peter Han) | Jlib (LIghtJUNction) |
+| :--- | :--- | :--- |
+| **集成范式** | **自包含内嵌模式（Merged / ILRepack）**<br>官方推荐在编译期将 PLib 合并进每个 Mod 的 DLL，玩家无需订阅额外前置，运行时通过版本路由机制协同 | **独立共享前置模式（Shared Prerequisite）**<br>作为创意工坊独立订阅的前置 Mod 运行，下游 Mod 通过 NuGet 引用但 `ExcludeAssets="runtime"`，显著减小 Mod 分发体积并由单一实例统一调度 |
+| **NuGet 分发** | 官方包 [`PLib`](https://www.nuget.org/packages/PLib/)（主要用于编译期打包与内联） | 官方包 [`LIghtJUNction.Jlib`](https://www.nuget.org/packages/LIghtJUNction.Jlib)（专为共享前置模式配置，支持多目标构建） |
+| **依赖感知面板** | 专注于内嵌组件路由 | 内置 `PUtil.DependentMods()`，在 Jlib 的 Mod 选项界面中动态扫描并展示当前游戏中正在共用 Jlib 的模组清单 |
+| **配置选项刷新** | `POptions.Initialize` 适合游戏启动期一次性注册 | 新增 `POptions.RefreshRegistered()`，支持在主初始化后动态加载的模块或延迟注册的选项实时热刷新 |
+| **所有权显式绑定** | 依赖调用栈反射（`Assembly.GetCallingAssembly`）解析 Mod 根目录 | 补充 `PUtil.RegisterModAssembly()` 与 `JlibApi.RegisterConsumer()`，支持在复杂调度或动态加载时显式指定程序集所有权 |
+| **多目标构建与测试** | 经典 .NET Framework 工程 | 现代 SDK-style 工程，支持 `net48` 与 `netstandard2.1`，并附带不依赖游戏客户端的独立宿主单元测试套件（`Jlib.Tests`） |
+
 ## 玩家安装
 
 安装并启用 Jlib 前置 Mod，将它排在依赖它的 Mod 前面，然后重启游戏。

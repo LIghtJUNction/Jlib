@@ -5,7 +5,8 @@ using System.Reflection;
 namespace KMod {
     public sealed class Mod {
         public string? ContentPath { get; set; }
-        public string? staticID { get; set; }
+        public string? staticID;
+        public string? title { get; set; }
         public LoadedModData? loaded_mod_data;
     }
 

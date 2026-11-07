@@ -96,8 +96,8 @@ internal static class SourceContract {
         var readme = File.ReadAllText(Path.Combine(root, "Jlib", "README.md"));
         foreach (var token in new[] {
             Jlib.Runtime.JlibApi.Version, "CheckCompatibility", "RequireCompatibility", "DiscoverProviders",
-            "RegisterConsumer", "JlibContract.Inspect", "JlibCompileContractIntoBootstrap", "Jlib.Tests",
-            "real game session"
+            "RegisterConsumer", "ReplaceNativeLibrary", "ReplaceSimDll", "JlibContract.Inspect",
+            "JlibCompileContractIntoBootstrap", "Jlib.Tests", "real game session"
         })
             Program.Check(readme.Contains(token, StringComparison.Ordinal), "README mentions " + token);
         foreach (var description in new[] { "description.txt", "description.en.txt" }) {

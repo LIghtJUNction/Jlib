@@ -16,6 +16,7 @@ internal static partial class Program {
             OwnershipContract();
             ResourceContract();
             ContractCoverage.Run();
+            GameComponentReplacementCoverage.Run();
             SourceContract.Run(args);
             Console.WriteLine($"PASS: {assertions} assertions; real ownership, resource, and contract helpers, no game DLLs executed.");
             return 0;
@@ -114,8 +115,16 @@ internal static partial class Program {
         Equal(Jlib.Runtime.JlibContract.ExpectedAbi, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedAbi"), path + " contract ABI");
         Equal(Jlib.Runtime.JlibContract.ExpectedStaticId, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedStaticId"), path + " contract static ID");
         Equal(Jlib.Runtime.JlibContract.ExpectedPLibVersion, ReadConstant(metadata, "Jlib.Runtime", "JlibContract", "ExpectedPLibVersion"), path + " contract protocol");
-        foreach (var method in new[] { "CheckCompatibility", "RequireCompatibility", "DiscoverProviders", "RegisterConsumer" })
+        foreach (var method in new[] {
+            "CheckCompatibility", "RequireCompatibility", "DiscoverProviders", "RegisterConsumer",
+            "ReplaceNativeLibrary", "ReplaceSimDll", "TryGetMappedNativeLibrary"
+        })
             Check(HasMethod(metadata, "Jlib.Runtime", "JlibApi", method), path + " JlibApi." + method);
+        Check(HasType(metadata, "Jlib.Runtime", "GameComponentReplacement"), path + " GameComponentReplacement type");
+        Check(HasMethod(metadata, "Jlib.Runtime", "GameComponentReplacement", "Replace"),
+            path + " GameComponentReplacement.Replace");
+        Check(HasMethod(metadata, "Jlib.Runtime", "GameComponentReplacement", "ReplaceSimDll"),
+            path + " GameComponentReplacement.ReplaceSimDll");
         foreach (var method in new[] { "Evaluate", "Inspect", "TryParseVersion" })
             Check(HasMethod(metadata, "Jlib.Runtime", "JlibContract", method), path + " JlibContract." + method);
         Check(HasType(metadata, "Jlib.Runtime", "JlibCompatibility"), path + " compatibility result");

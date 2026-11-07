@@ -17,11 +17,11 @@ not install the game mod. Jlib itself does not change colony gameplay.
 
 ## Consumer contract
 
-- Assembly: `Jlib`, version `0.2.0.0`; mod static ID: `LIghtJUNction.Jlib`.
+- Assembly: `Jlib`, version `0.3.0.0`; mod static ID: `LIghtJUNction.Jlib`.
 - `Jlib.Runtime.JlibApi.AbiVersion` is the public integer constant `1`.
   ABI must match exactly. New methods that existing callers can ignore stay on ABI 1;
   `Version` is how a consumer asks for those methods.
-- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.2.0`), and `PLibVersion` identify the provider.
+- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.3.0`), and `PLibVersion` identify the provider.
 - `CheckCompatibility(requiredAbi, minimumVersion)` reports a `JlibCompatibility` result.
   `RequireCompatibility` throws `JlibCompatibilityException` when that result is not compatible.
 - `DiscoverProviders(requiredAbi, minimumVersion)` reflects over assemblies already loaded
@@ -37,9 +37,14 @@ not install the game mod. Jlib itself does not change colony gameplay.
   `PeterHan.PLib.Core.PUtil.RegisterModAssembly` keeps its previous behavior for existing
   PLib callers and does not apply these extra checks.
 - Retained PLib component protocol: `4.25.0.0`.
-- NuGet package: `LIghtJUNction.Jlib` version `0.2.0`, targets `net48` and `netstandard2.1`.
+- NuGet package: `LIghtJUNction.Jlib` version `0.3.0`, targets `net48` and `netstandard2.1`.
+- `ReplaceNativeLibrary` / `ReplaceSimDll` redirect a Mono P/Invoke DLL name (for example
+  `SimDLL`) for one loaded managed assembly's MonoImage to an absolute native library path.
+  Call only in the Unity Mono game process before `Game.Instance` exists. The mapping cannot
+  be undone without a restart. Official ABI checks of the replacement binary stay with the
+  caller. Prefer `minimumVersion: "0.3.0"` when you need these methods.
 
-Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.2.0" ExcludeAssets="runtime"`
+Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.3.0" ExcludeAssets="runtime"`
 or a project reference with `Private="false"`. Do not merge the shared assembly
 or include `Jlib.dll` / `PLib*.dll` in a consumer release. A consumer that has
 Jlib-dependent types must validate and load the enabled Jlib provider **before**
@@ -56,17 +61,26 @@ same opt-in compiles `Jlib/Runtime/JlibContract.cs`.
 var found = Jlib.Runtime.JlibContract.Inspect(
     AppDomain.CurrentDomain.GetAssemblies(),
     requiredAbi: Jlib.Runtime.JlibContract.ExpectedAbi,
-    minimumVersion: "0.2.0");
+    minimumVersion: "0.3.0");
 if (!found.IsCompatible)
     throw new InvalidOperationException(found.Message);
 ```
 
 Once the shared provider is the assembly actually executing `JlibApi`, the implementation
-project can call `JlibApi.RequireCompatibility(1, "0.2.0")` and then
+project can call `JlibApi.RequireCompatibility(1, "0.3.0")` and then
 `JlibApi.RegisterConsumer(implementation, owner)`.
 
+```csharp
+// Early OnLoad / bootstrap, Unity Mono only, before Game.Instance exists:
+var mapped = JlibApi.ReplaceSimDll(
+    typeof(Sim).Assembly,
+    absoluteReplacementPath: Path.GetFullPath(Path.Combine(modRoot, "linux-x64", "liboni_sim_core.so")));
+if (!mapped.Succeeded)
+    throw new InvalidOperationException(mapped.Message);
+```
+
 订阅端在枚举自己的实现类型之前，要用已加载的 Jlib 提供者核对 ABI `1` 和最低库版本。
-`0.2.0` 增加了上述检查，`RegisterConsumer` 的方法签名没有改变。
+`0.3.0` 增加了原生组件替换接口，ABI 仍为 `1`；`RegisterConsumer` 的方法签名没有改变。
 
 A game-free test host may explicitly set `JlibCopyLocalForHost=true` to copy
 the development library to its output. This exception is only for host tests;

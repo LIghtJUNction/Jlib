@@ -14,7 +14,7 @@ namespace Jlib.Runtime {
     public static class JlibApi {
         public const int AbiVersion = JlibContract.ExpectedAbi;
         public const string StaticId = JlibContract.ExpectedStaticId;
-        public const string Version = "0.2.0";
+        public const string Version = "0.3.0";
         public const string PLibVersion = JlibContract.ExpectedPLibVersion;
 
         /// <summary>
@@ -58,5 +58,28 @@ namespace Jlib.Runtime {
                 throw new InvalidOperationException("The Jlib provider mod cannot be registered as a consumer.");
             PUtil.RegisterModAssembly(implementation, owner);
         }
+
+        /// <summary>
+        /// Redirects a P/Invoke DLL name for one loaded managed assembly's MonoImage to an
+        /// absolute native library path. See <see cref="GameComponentReplacement.Replace"/>.
+        /// Requires library version 0.3.0 or newer; ABI remains 1.
+        /// </summary>
+        public static GameComponentReplacementResult ReplaceNativeLibrary(Assembly managedAssembly,
+                string dllMapName, string absoluteReplacementPath,
+                GameComponentReplacementOptions? options = null) =>
+            GameComponentReplacement.Replace(managedAssembly, dllMapName, absoluteReplacementPath, options);
+
+        /// <summary>
+        /// Redirects Oxygen Not Included's <c>SimDLL</c> P/Invoke imports for
+        /// <paramref name="gameAssembly"/> to <paramref name="absoluteReplacementPath"/>.
+        /// </summary>
+        public static GameComponentReplacementResult ReplaceSimDll(Assembly gameAssembly,
+                string absoluteReplacementPath, GameComponentReplacementOptions? options = null) =>
+            GameComponentReplacement.ReplaceSimDll(gameAssembly, absoluteReplacementPath, options);
+
+        /// <summary>Looks up a path previously applied by <see cref="ReplaceNativeLibrary"/>.</summary>
+        public static bool TryGetMappedNativeLibrary(Assembly managedAssembly, string dllMapName,
+                out string? path) =>
+            GameComponentReplacement.TryGetMappedPath(managedAssembly, dllMapName, out path);
     }
 }

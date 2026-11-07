@@ -34,7 +34,7 @@
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
     <!-- ONI's Mono core library supplies the span types referenced by Unity 6. -->
-    <FrameworkPathOverride>$(OniManagedPath)</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('$(OniManagedPath)/mscorlib.dll')">$(OniManagedPath)</FrameworkPathOverride>
   </PropertyGroup>
 
   <ItemGroup>

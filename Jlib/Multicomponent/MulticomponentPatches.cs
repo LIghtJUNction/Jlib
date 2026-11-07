@@ -33,7 +33,9 @@ namespace Jlib.Multicomponent {
                 typeof(MulticomponentBuildingPatch.VentValidOutputCellPatch),
                 typeof(MulticomponentPlantPatch),
                 typeof(MulticomponentNavigationPatch),
-                typeof(MulticomponentHoverPatch)
+                typeof(MulticomponentHoverPatch),
+                typeof(MulticomponentOverlayPatch.MaterialOverlayTileColourPatch),
+                typeof(MulticomponentOverlayPatch.OxygenOverlayColourPatch)
             };
 
             foreach (var type in patchTypes) {

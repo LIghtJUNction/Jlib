@@ -81,5 +81,24 @@ namespace Jlib.Runtime {
         public static bool TryGetMappedNativeLibrary(Assembly managedAssembly, string dllMapName,
                 out string? path) =>
             GameComponentReplacement.TryGetMappedPath(managedAssembly, dllMapName, out path);
+
+#if !JLIB_HOST_TESTS
+        /// <summary>Returns true if the caller is running on the Unity main rendering thread.</summary>
+        public static bool IsMainThread => JlibDispatcher.IsMainThread;
+
+        /// <summary>Throws an exception if the caller is not executing on Unity's main thread.</summary>
+        public static void RequireMainThread(string? operationName = null) =>
+            JlibDispatcher.RequireMainThread(operationName);
+
+        /// <summary>Executes the specified action on the Unity main thread, inlining if already on main thread.</summary>
+        public static void RunOnMainThread(System.Action action) => JlibDispatcher.Enqueue(action);
+
+        /// <summary>Executes the specified action on a subsequent Unity frame update.</summary>
+        public static void RunOnMainThreadDeferred(System.Action action) => JlibDispatcher.EnqueueDeferred(action);
+
+        /// <summary>Executes a delegate on the Unity main thread and blocks the worker thread until completion.</summary>
+        public static T InvokeOnMainThread<T>(Func<T> func, int timeoutMs = 10000) =>
+            JlibDispatcher.Invoke(func, timeoutMs);
+#endif
     }
 }

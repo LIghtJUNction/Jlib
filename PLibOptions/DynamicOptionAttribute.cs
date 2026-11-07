@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Peter Han
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without
@@ -26,7 +26,7 @@ namespace PeterHan.PLib {
 	/// from IOptionsEntry.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-	public sealed class DynamicOptionAttribute : Attribute {
+	public class DynamicOptionAttribute : Attribute {
 		/// <summary>
 		/// The option category.
 		/// </summary>

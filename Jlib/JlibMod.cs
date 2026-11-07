@@ -8,6 +8,7 @@ namespace Jlib.Runtime {
         public override void OnLoad(Harmony harmony) {
             base.OnLoad(harmony);
             PUtil.InitLibrary();
+            JlibDispatcher.EnsureInitialized();
             new POptions().RegisterOptions(this, typeof(JlibOptions));
             PUtil.LogDebug("Jlib provider " + JlibApi.StaticId + " " + JlibApi.Version +
                 " ABI " + JlibApi.AbiVersion + " protocol " + JlibApi.PLibVersion);

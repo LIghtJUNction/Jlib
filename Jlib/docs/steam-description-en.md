@@ -7,7 +7,6 @@ Subscribe once, place it above dependent mods, and leave colony rules alone. Jli
 [i]Enable one copy of static ID LIghtJUNction.Jlib.[/i]
 
 [h3]Supported DLC:[/h3]
-[img]https://raw.githubusercontent.com/Sgt-Imalas/Sgt_Imalas-Oni-Mods/refs/heads/master/Compat_All.png[/img]
 
 [h3]✨ Complete Features Enumeration[/h3]
 * [b]PLibCore Reflection & Tools[/b]: Mod ownership binding ([code]PUtil.DependentMods[/code]), PDetours fast reflection delegates, PPatchTools/PTranspilerTools bytecode utilities, PThreadLocalPool object pooling, Gettext PO localization, and TMP font patching.

@@ -7,7 +7,6 @@
 [i]static ID LIghtJUNction.Jlib 只启用一份。[/i]
 
 [h3]支持的 DLC:[/h3]
-[img]https://raw.githubusercontent.com/Sgt-Imalas/Sgt_Imalas-Oni-Mods/refs/heads/master/Compat_All.png[/img]
 
 [h3]✨ 核心功能全集枚举[/h3]
 * [b]PLibCore 核心工具[/b]：模组所有权绑定（[code]PUtil.DependentMods[/code]）、PDetours 快速反射委托、PPatchTools/PTranspilerTools 字节码辅助、PThreadLocalPool 线程对象池、PO 语言包加载与 TMP 字体补丁。

@@ -1,50 +1,37 @@
 [img]https://raw.githubusercontent.com/LIghtJUNction/Jlib/main/Jlib/preview.png[/img]
 
-欢迎来到 [b]Jlib[/b]！《缺氧》（Oxygen Not Included）下一代高性能共享基础前置库。
-所有下游模组共用一份高性能、标准兼容的提供者，彻底告别重复打包与版本冲突！
+欢迎来到 Jlib！《缺氧》下一代高性能共享前置库。
+[b]所有下游模组共用一份高性能、标准兼容的提供者，彻底告别重复打包与版本冲突！[/b]
+订阅一次排在依赖 Mod 前面。殖民地规则不动，Jlib 不改变游戏原生玩法，但为整个 Mod 生态提供坚实底座。
 
-订阅一次，排在需要它的模组前面即可。Jlib 不改变游戏原生玩法，但为整个 Mod 生态提供最坚实的底层底座。
-
-[h2]当前版本: v0.3.0[/h2]
-[i]公开稳定 ABI: 1。兼容保留 PLib 组件协议: 4.25.0.0。[/i]
-[i]static ID: LIghtJUNction.Jlib（全局只启用一份，自动多版本仲裁）。[/i]
+[h2]当前阶段: v0.3.0[/h2]
+[i]公开稳定 ABI: 1。保留的 PLib 组件协议: 4.25.0.0。[/i]
+[i]static ID LIghtJUNction.Jlib 只启用一份。[/i]
 
 [h3]支持的 DLC:[/h3]
 [img]https://raw.githubusercontent.com/Sgt-Imalas/Sgt_Imalas-Oni-Mods/refs/heads/master/Compat_All.png[/img]
 
-[h3]✨ 核心特性矩阵 (Core Features)[/h3]
+[h3]✨ 核心功能全集枚举[/h3]
+* [b]PLibCore 核心工具[/b]：模组所有权绑定（[code]PUtil.DependentMods[/code]）、PDetours 快速反射委托、PPatchTools/PTranspilerTools 字节码辅助、PThreadLocalPool 线程对象池、PO 语言包加载与 TMP 字体补丁。
+* [b]PLibOptions 配置体系[/b]：游戏原生风格配置页（POptions），支持全类型控件（滑动条、颜色拾取、枚举单选、密码掩码等）、动态选项与运行时热刷新（[code]POptions.RefreshRegistered[/code]）。
+* [b]PLibUI 声明式 UI 引擎[/b]：轻量级 Unity UI 框架，内置 4 大布局引擎（BoxLayout/GridLayout/RelativeLayout/CardLayout）与可拖拽浮动弹窗。
+* [b]PLibActions / Buildings / Lighting / Database / AVC[/b]：自定义按键映射与安全分发、建筑管线注册、多边形光照、法典成就注入与多源自动版本检查。
+* [b]Jlib.Runtime 现代前置底座[/b]：严格 ABI 1 握手、零依赖引导合约（[code]JlibContract[/code]）、原生动态库 Mono P/Invoke 重定向（[code]ReplaceNativeLibrary[/code]/[code]ReplaceSimDll[/code]）为 OniSim 等 C++/Rust 引擎提供免重启注入、沙盒安全资源解析器（[code]ModResources[/code]）与游戏组件热替换。
 
-[b]1. 原生组件热替换引擎 (Native Component Replacement)[/b]
-* 支持在托管层透明替换游戏底层动态库（如 [code]SimDLL[/code] / [code]sim.dll[/code]）。
-* 无缝对接 Rust / C++ 高性能仿真内核（如 [b]CycleTrim / OniSim[/b]），支持平台架构自适应加载与 Mono DLL 映射。
+[h3]🌟 独家：动态接口调用分析与 Harmony 补丁排序诊断器[/h3]
+* [b]零硬编码动态枚举[/b]：运行时反射自动扫描所有模块与公开 API，随 Mod 更新自动同步！
+* [b]接口调用次数统计[/b]：精准记录每个公开 API 的调用频次与最后触发时间。
+* [b]调用来源 Mod 溯源[/b]：自动回溯调用栈，直接提取调用者 Mod 名称与 staticID！
+* [b]补丁覆盖全景流水线[/b]：按 Prefix -> Transpiler -> Postfix 完整展示执行覆盖顺序与优先级。
+* [b]可拖动交互重排覆盖顺序[/b]：配置页一键唤出悬浮窗口，点击 [b][▲ 提前][/b] 或 [b][▼ 延后][/b] 实时重排优先级并即刻生效，无需重启游戏现场化解 Mod 冲突！
+* [b]支持 Debug 诊断[/b]：一键开启详细日志追踪并支持导出完整快照至 [code]Player.log[/code]！
 
-[b]2. 一格多物（多组分）解耦垫片体系 (Multicomponent Shims)[/b]
-* 针对游戏原版“一格一物”硬编码死锁，提供 6 大系统级解耦兼容层：
-  - [b]视觉渲染[/b]：气体双线性质量加权颜色混合，次级气体不再隐形。
-  - [b]复制人生理[/b]：基于分压加权的可呼吸质量判定，彻底杜绝混气假死窒息。
-  - [b]工业建筑[/b]：排气口液体浸没微量容差与建筑消费物相兼容判定。
-  - [b]生态环境[/b]：植物微气压环境容差评估。
-  - [b]导航阻尼[/b]：泳道表面液面波动的滞后滤波。
-  - [b]信息展示[/b]：鼠标悬浮卡片多组分百分比精准呈现。
-* 任何模组调用 [code]JlibApi.InstallMulticomponentPatches[/code] 即可一键挂载全套垫片。
+[h3]开发者指南 (MODDING API)[/h3]
+NuGet: [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]LIghtJUNction.Jlib[/url] (net48/netstandard2.1)。设置 [code]ExcludeAssets="runtime"[/code]，严禁将 Jlib.dll 打包进消费者发行包。在枚举类型前调用 [code]JlibApi.RegisterConsumer[/code]。
 
-[b]3. 现代全栈 PLib 架构演进[/b]
-* [b]PLibCore[/b]：反射加速 Detours、字节码 Transpiler 工具、零锁高并发对象池（[code]PThreadLocalPool[/code]）、多语言 PO 本地化。
-* [b]PLibOptions[/b]：现代声明式设置面板，全类型控件（滑动条/拾色器/下拉框/密码遮罩输入），支持动态选项与热刷新。
-* [b]PLibUI[/b]：声明式 Unity UI 框架，自适应网格、盒式与卡片布局，可拖拽弹窗。
-* [b]PLibActions & PLibBuildings[/b]：自定义快捷键安全分发（[code]KButtonEventSafety[/code]）与建筑管道拓扑。
+[h3]谁需要它[/h3]
+[url=https://steamcommunity.com/sharedfiles/filedetails/?id=3807166922]ONI MCP Server[/url] 与 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3807166689]CycleTrim[/url] 均依赖本模组。
 
-[b]4. 跨线程安全调度与动态诊断 (Dispatcher & Diagnostics)[/b]
-* 双缓冲线程安全主线程调度器（[code]JlibApi.RunOnMainThread[/code] / [code]InvokeOnMainThread[/code]）。
-* 运行时 API 调用动态统计与 Harmony 补丁审查诊断。
-
-[h3]📌 使用指南[/h3]
-1. 在创意工坊点击“订阅”本模组。
-2. 启动游戏，在模组管理器中勾选启用 [b]Jlib[/b]。
-3. 将 [b]Jlib[/b] 拖动到需要依赖它的模组（如 OniMcp、CycleTrim 等）上方。
-4. 重启游戏即可享受极速稳定的模组体验！
-
-[h3]开源许可与贡献[/h3]
-* 代码遵循 MIT / Apache-2.0 开源协议。
-* 源码仓库：[url=https://github.com/LIghtJUNction/OniMods]LIghtJUNction/OniMods[/url]
-* 欢迎提交 PR、报告 Issue 或参与社区交流！
+[h3]开源贡献[/h3]
+源码与反馈：[url=https://github.com/LIghtJUNction/OniMods]GitHub 仓库[/url] 与 [url=https://github.com/LIghtJUNction/OniMods/issues]Issues[/url]。
+[img]https://i.ibb.co/LXdJf9K9/I3P8A6f.gif[/img]

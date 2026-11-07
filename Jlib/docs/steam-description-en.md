@@ -6,8 +6,6 @@ Subscribe once, place it above dependent mods, and leave colony rules alone. Jli
 [i]Public ABI: 1. Retained PLib component protocol: 4.25.0.0.[/i]
 [i]Enable one copy of static ID LIghtJUNction.Jlib.[/i]
 
-[h3]Supported DLC:[/h3]
-
 [h3]✨ Complete Features Enumeration[/h3]
 * [b]PLibCore Reflection & Tools[/b]: Mod ownership binding ([code]PUtil.DependentMods[/code]), PDetours fast reflection delegates, PPatchTools/PTranspilerTools bytecode utilities, PThreadLocalPool object pooling, Gettext PO localization, and TMP font patching.
 * [b]PLibOptions Mod Configuration[/b]: Native-styled settings UI (POptions) with full widget catalog (sliders, colors, select-one, password), dynamic options, and runtime hot-refresh ([code]POptions.RefreshRegistered[/code]).
@@ -31,4 +29,3 @@ NuGet: [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]LIghtJUNction.Jlib
 
 [h3]Contributions[/h3]
 Source: [url=https://github.com/LIghtJUNction/OniMods]GitHub Repository[/url] | Issues: [url=https://github.com/LIghtJUNction/OniMods/issues]Issues[/url].
-[img]https://i.ibb.co/LXdJf9K9/I3P8A6f.gif[/img]

@@ -6,8 +6,6 @@
 [i]公开稳定 ABI: 1。保留的 PLib 组件协议: 4.25.0.0。[/i]
 [i]static ID LIghtJUNction.Jlib 只启用一份。[/i]
 
-[h3]支持的 DLC:[/h3]
-
 [h3]✨ 核心功能全集枚举[/h3]
 * [b]PLibCore 核心工具[/b]：模组所有权绑定（[code]PUtil.DependentMods[/code]）、PDetours 快速反射委托、PPatchTools/PTranspilerTools 字节码辅助、PThreadLocalPool 线程对象池、PO 语言包加载与 TMP 字体补丁。
 * [b]PLibOptions 配置体系[/b]：游戏原生风格配置页（POptions），支持全类型控件（滑动条、颜色拾取、枚举单选、密码掩码等）、动态选项与运行时热刷新（[code]POptions.RefreshRegistered[/code]）。
@@ -31,4 +29,3 @@ NuGet: [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]LIghtJUNction.Jlib
 
 [h3]开源贡献[/h3]
 源码与反馈：[url=https://github.com/LIghtJUNction/OniMods]GitHub 仓库[/url] 与 [url=https://github.com/LIghtJUNction/OniMods/issues]Issues[/url]。
-[img]https://i.ibb.co/LXdJf9K9/I3P8A6f.gif[/img]

@@ -1,14 +1,22 @@
-[h1]Jlib — 共用前置库[/h1]
-Jlib 是从 Peter Han 的 PLib 4.25 派生的共享库，为依赖它的《缺氧》Mod 提供设置界面、UI、快捷键、建筑、数据库和光照等公共功能。
+[h1]Jlib — 高性能共享前置库[/h1]
+Jlib 是从 Peter Han 的 PLib 4.25 深度演进的下一代《缺氧》共享库，为下游 Mod 提供标准化前置。
 
-[b]使用方法[/b]
-订阅并在游戏的 Mod 列表中启用 Jlib，再启用依赖它的 Mod。建议将 Jlib 放在这些 Mod 前面，重启游戏使变更生效。一份 Jlib.dll 可供多个依赖 Mod 共用。
+[b]核心功能全集[/b]
+* PLibCore：反射增强 (PDetours 快速委托)、补丁管理 (PPatchTools / PPatchManager / PTranspilerTools)、线程对象池 (PThreadLocalPool)、PO 翻译 (PLibLocalization)、TMP 字体补丁与跨 Mod 注册表 (PRegistry)。
+* PLibOptions：全功能 Mod 配置选项界面 (POptions)，支持全类型控件、分类折叠、重启提醒与动态热刷新。
+* PLibUI：声明式轻量级 Unity UI 引擎，包含全套标准控件、4 大自适应布局系统与可拖拽浮动弹窗。
+* PLibActions / Buildings / Lighting / Database / AVC：自定义按键映射、建筑注册与管线端口、多边形光照、法典成就注入与自动更新检查。
+* Jlib.Runtime：严格 ABI 1 握手、零依赖引导合约 (JlibContract)、原生库 Mono P/Invoke 动态重定向 (ReplaceNativeLibrary / ReplaceSimDll)、沙盒化资源读取 (ModResources) 与游戏组件热替换。
 
-Jlib 本身不改变殖民地玩法。其他作者使用原版内嵌 PLib 的 Mod 无需迁移。本项目不会替换或删除它们的 PLib。
+[b]独家特性：动态接口统计与 Harmony 补丁排序诊断器[/b]
+* 动态无硬编码枚举：运行时反射实时扫描所有模块与公开 API，随 Mod 更新自动同步。
+* 统计接口调用次数与来源 Mod：精准记录各接口调用量，自动回溯堆栈定位发起调用的下游 Mod。
+* 补丁覆盖流水线全景：清晰列出所有受挂钩方法的 Prefix、Transpiler 与 Postfix 覆盖链路。
+* 拖拽与交互排序：在配置界面中唤出浮动面板，点击 [▲ 提前] 或 [▼ 延后] 即可实时重排补丁优先级，即刻化解 Mod 冲突！
+* 全功能 Debug：一键开启详细日志追踪并支持导出完整快照至 Player.log。
 
-[b]开发者[/b]
-NuGet：LIghtJUNction.Jlib。API 保留 PeterHan.PLib 命名空间。消费者应以编译期引用方式使用，禁止把 Jlib.dll 合并或复制进各自的发行包。加载自己的实现程序集之前，请检查已启用 Jlib 的 ABI。
+[b]使用与开发[/b]
+* 玩家：订阅并在 Mod 列表排在依赖它的 Mod（如 CycleTrim、OniMcp）上方，重启游戏。
+* 开发者：NuGet 包 LIghtJUNction.Jlib (net48 / netstandard2.1)，ExcludeAssets="runtime"，禁止打包 Jlib.dll。
 
-[b]来源与授权[/b]
-PLib 源码与文档由 Peter Han 按 MIT 授权；Jlib 保留原始版权与许可。源码：https://github.com/LIghtJUNction/Jlib
-上游：https://github.com/peterhaneve/ONIMods
+来源与授权：MIT License | 源码: https://github.com/LIghtJUNction/OniMods

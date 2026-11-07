@@ -1,15 +1,22 @@
-[h1]Jlib — Shared prerequisite library[/h1]
-Jlib is a shared library derived from Peter Han's PLib 4.25. It provides mod options, UI, actions, buildings, database and lighting APIs to dependent Oxygen Not Included mods.
+[h1]Jlib — Shared Prerequisite Library[/h1]
+Jlib is a high-performance shared library for Oxygen Not Included, evolved from Peter Han's PLib 4.25 to provide a modern, unified prerequisite for downstream mods.
 
-[b]Installation[/b]
-Subscribe and enable Jlib in the game's Mods list, then enable its dependent mods. Place Jlib above those mods and restart the game after changing the selection. Multiple dependent mods share one Jlib.dll.
+[b]Comprehensive Features[/b]
+* PLibCore: Reflection tools (PDetours fast delegates), patch manager (PPatchTools / PPatchManager / PTranspilerTools), object pooling (PThreadLocalPool), PO localization, TMP font patching, and cross-mod service registry (PRegistry).
+* PLibOptions: Comprehensive mod settings UI (POptions) with full widget catalog, categories, restart alerts, and runtime hot-refresh.
+* PLibUI: Declarative lightweight Unity UI engine with full widget suite, 4 responsive layout systems, and draggable modal dialogs.
+* PLibActions / Buildings / Lighting / Database / AVC: Custom keybindings, building registration, polygon lighting, codex achievements, and auto update checks.
+* Jlib.Runtime: Strict ABI 1 verification, zero-dependency contract (JlibContract), native Mono P/Invoke redirection (ReplaceNativeLibrary / ReplaceSimDll), sandboxed asset loading (ModResources), and runtime component replacement.
 
-Jlib itself does not alter colony gameplay. Mods by other authors that embed the original PLib can continue to do so. Jlib does not replace or remove those embedded libraries.
+[b]Exclusive: Dynamic Interface Profiler & Harmony Hook Order Debugger[/b]
+* Dynamic Zero-Hardcode Discovery: Runtime reflection enumerates all modules and public APIs automatically as Jlib updates.
+* Interface Call Counters & Caller Mod Attribution: Accurately tracks API invocations and traces the calling mod via stack analysis.
+* Hook Pipeline Visualization: Full overview of active Harmony Prefix, Transpiler, and Postfix execution chains.
+* Interactive Order Adjustment: Open a draggable panel, click [▲ Move Up] or [▼ Move Down] to adjust patch priorities live and resolve mod conflicts without restarts!
+* Full Debug Mode: Live verbose call logging and full diagnostic export to Player.log.
 
-[b]Developers[/b]
-NuGet: LIghtJUNction.Jlib. Existing PeterHan.PLib API namespaces are retained. Reference the library for compilation only; do not merge or copy Jlib.dll into a consumer's release package. Check the enabled Jlib provider's ABI before loading a consumer implementation.
+[b]Usage & Modding[/b]
+* Players: Subscribe and place Jlib above dependent mods (e.g. CycleTrim, OniMcp) in the Mods list, then restart ONI.
+* Developers: NuGet LIghtJUNction.Jlib (net48 / netstandard2.1), set ExcludeAssets="runtime", do not bundle Jlib.dll.
 
-[b]Credits and license[/b]
-PLib source and documentation are MIT-licensed by Peter Han. Jlib preserves those notices.
-Source: https://github.com/LIghtJUNction/Jlib
-Upstream: https://github.com/peterhaneve/ONIMods
+License: MIT | Source: https://github.com/LIghtJUNction/OniMods

@@ -17,6 +17,7 @@ internal static partial class Program {
             ResourceContract();
             ContractCoverage.Run();
             GameComponentReplacementCoverage.Run();
+            DiagnosticsContract();
             SourceContract.Run(args);
             Console.WriteLine($"PASS: {assertions} assertions; real ownership, resource, and contract helpers, no game DLLs executed.");
             return 0;
@@ -221,5 +222,43 @@ internal static partial class Program {
             return;
         }
         Check(false, scenario + " should throw " + typeof(T).Name);
+    }
+
+    private static void DiagnosticsContract() {
+        Jlib.Runtime.JlibDiagnostics.ResetCallStats();
+        Equal(0, Jlib.Runtime.JlibDiagnostics.GetCallStats().Count, "stats empty after reset");
+
+        var modules = Jlib.Runtime.JlibDiagnostics.DiscoverModules();
+        Check(modules.Count > 0, "dynamic discovery finds modules without hardcoded enum");
+
+        var runtimeMod = modules.FirstOrDefault(m => m.NamespacePrefix == "Jlib.Runtime");
+        Check(runtimeMod != null, "discovered Jlib.Runtime module");
+        Check(runtimeMod.DiscoveredTypes.Count > 0, "discovered types in Jlib.Runtime");
+
+        // Test API call tracking
+        Jlib.Runtime.JlibApi.CheckCompatibility(1);
+        var stats = Jlib.Runtime.JlibDiagnostics.GetCallStats();
+        Check(stats.ContainsKey("JlibApi.CheckCompatibility"), "recorded CheckCompatibility call");
+        Check(stats["JlibApi.CheckCompatibility"].TotalCalls >= 1, "call counter incremented");
+
+        // Test custom interface call tracking
+        Jlib.Runtime.JlibApi.TrackInterfaceCall("TestInterface.CustomMethod");
+        Check(stats.ContainsKey("TestInterface.CustomMethod"), "recorded custom tracked interface");
+        Equal(1, (int)stats["TestInterface.CustomMethod"].TotalCalls, "custom call count 1");
+
+        // Test report generation
+        string report = Jlib.Runtime.JlibDiagnostics.GenerateReport();
+        Check(report.Contains("Jlib 诊断与性能监测快照"), "report contains header");
+        Check(report.Contains("TestInterface.CustomMethod"), "report contains tracked interface");
+
+        Jlib.Runtime.JlibDiagnostics.ResetCallStats();
+        Equal(0, Jlib.Runtime.JlibDiagnostics.GetCallStats().Count, "stats reset clean");
+    }
+}
+
+namespace PeterHan.PLib.Core {
+    public static partial class PUtil {
+        public static void LogDebug(string message) { }
+        public static void LogWarning(string message) { }
     }
 }

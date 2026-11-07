@@ -14,6 +14,7 @@
     <Compile Include="../Jlib/Runtime/MonoDllMap.cs" Link="Source/MonoDllMap.cs" />
     <Compile Include="../Jlib/Runtime/NativeModule.cs" Link="Source/NativeModule.cs" />
     <Compile Include="../Jlib/Runtime/NativePlatform.cs" Link="Source/NativePlatform.cs" />
+    <Compile Include="../Jlib/Runtime/JlibDiagnostics.cs" Link="Source/JlibDiagnostics.cs" />
     <Compile Include="../Jlib/JlibApi.cs" Link="Source/JlibApi.cs" />
     <Compile Include="../Jlib/ModResources.cs" Link="Source/ModResources.cs" />
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />

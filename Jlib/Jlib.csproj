@@ -108,6 +108,8 @@
     </ItemGroup>
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(JlibModDir)" />
     <Copy SourceFiles="@(JlibModFiles)" DestinationFolder="$(JlibModDir)" />
+    <MakeDir Directories="$(JlibModDir)/docs" Condition="Exists('$(MSBuildProjectDirectory)/docs')" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/docs/steam-description-zh.md;$(MSBuildProjectDirectory)/docs/steam-description-en.md" DestinationFolder="$(JlibModDir)/docs" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildProjectDirectory)/docs')" />
     <ZipDirectory SourceDirectory="$(JlibModDir)" DestinationFile="$(JlibArtifactDir)/Jlib.zip" Overwrite="true" />
     <ItemGroup Condition="'$(JlibDistPath)' != ''">
       <JlibStagedModFiles Include="$(JlibModDir)/*" />

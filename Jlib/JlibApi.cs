@@ -21,11 +21,14 @@ namespace Jlib.Runtime {
         /// Compares this loaded provider with the ABI and minimum library version a consumer requires.
         /// ABI must match exactly. <paramref name="minimumVersion"/> may be null when any version of this ABI is acceptable.
         /// </summary>
-        public static JlibCompatibility CheckCompatibility(int requiredAbi, string? minimumVersion = null) =>
-            JlibContract.Evaluate(AbiVersion, Version, PLibVersion, StaticId, requiredAbi, minimumVersion);
+        public static JlibCompatibility CheckCompatibility(int requiredAbi, string? minimumVersion = null) {
+            JlibDiagnostics.RecordCall("JlibApi.CheckCompatibility");
+            return JlibContract.Evaluate(AbiVersion, Version, PLibVersion, StaticId, requiredAbi, minimumVersion);
+        }
 
         /// <summary>Throws <see cref="JlibCompatibilityException"/> when <see cref="CheckCompatibility"/> is not compatible.</summary>
         public static void RequireCompatibility(int requiredAbi, string? minimumVersion = null) {
+            JlibDiagnostics.RecordCall("JlibApi.RequireCompatibility");
             var result = CheckCompatibility(requiredAbi, minimumVersion);
             if (!result.IsCompatible)
                 throw new JlibCompatibilityException(result);
@@ -36,8 +39,10 @@ namespace Jlib.Runtime {
         /// Call this on the provider assembly that the game loaded. A bootstrap that has not
         /// loaded that assembly should compile <c>JlibContract</c> and call <see cref="JlibContract.Inspect"/> instead.
         /// </summary>
-        public static JlibCompatibility DiscoverProviders(int requiredAbi, string? minimumVersion = null) =>
-            JlibContract.Inspect(AppDomain.CurrentDomain.GetAssemblies(), requiredAbi, minimumVersion);
+        public static JlibCompatibility DiscoverProviders(int requiredAbi, string? minimumVersion = null) {
+            JlibDiagnostics.RecordCall("JlibApi.DiscoverProviders");
+            return JlibContract.Inspect(AppDomain.CurrentDomain.GetAssemblies(), requiredAbi, minimumVersion);
+        }
 
         /// <summary>
         /// Associates a dynamically loaded implementation with its owning mod before that implementation's OnLoad.
@@ -81,6 +86,21 @@ namespace Jlib.Runtime {
         public static bool TryGetMappedNativeLibrary(Assembly managedAssembly, string dllMapName,
                 out string? path) =>
             GameComponentReplacement.TryGetMappedPath(managedAssembly, dllMapName, out path);
+
+        /// <summary>
+        /// Records an interface invocation in the Jlib dynamic profiler, tracking call count and caller mod.
+        /// </summary>
+        public static void TrackInterfaceCall(string interfaceName, Assembly? caller = null) =>
+            JlibDiagnostics.RecordCall(interfaceName, caller);
+
+        /// <summary>Gets or sets whether real-time debug diagnostics are emitted to Player.log.</summary>
+        public static bool DebugMode {
+            get => JlibDiagnostics.DebugMode;
+            set => JlibDiagnostics.DebugMode = value;
+        }
+
+        /// <summary>Generates a comprehensive diagnostic text report of interfaces, calls, and Harmony pipelines.</summary>
+        public static string DumpDiagnosticReport() => JlibDiagnostics.GenerateReport();
 
 #if !JLIB_HOST_TESTS
         /// <summary>Returns true if the caller is running on the Unity main rendering thread.</summary>

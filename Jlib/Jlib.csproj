@@ -51,7 +51,7 @@
     <Reference Include="0Harmony" HintPath="$(OniManagedPath)/0Harmony.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
     <Reference Include="netstandard" HintPath="$(OniManagedPath)/netstandard.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
     <Reference Include="mscorlib" HintPath="$(OniManagedPath)/mscorlib.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
-    <Reference Include="System.Memory" HintPath="$(OniManagedPath)/System.Memory.dll" Private="false" Condition="'$(TargetFramework)' == 'net48'" />
+    <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="all" ExcludeAssets="runtime" Condition="'$(TargetFramework)' == 'net48'" />
     <Reference Include="FMODUnity" HintPath="$(OniManagedPath)/FMODUnity.dll" Private="false" />
     <Reference Include="Newtonsoft.Json" HintPath="$(OniManagedPath)/Newtonsoft.Json.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(OniManagedPath)/UnityEngine.dll" Private="false" />

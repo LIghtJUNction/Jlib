@@ -1,5 +1,3 @@
-[img]https://raw.githubusercontent.com/LIghtJUNction/Jlib/main/Jlib/preview.png[/img]
-
 Welcome to Jlib! The high-performance shared prerequisite mod for **Oxygen Not Included**.
 [b]Downstream mods share one unified, PLib-compatible provider instead of packaging duplicate copies and version conflicts.[/b]
 Subscribe once, place it above dependent mods, and leave colony rules alone. Jlib does not alter vanilla gameplay mechanics.

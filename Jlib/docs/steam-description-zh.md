@@ -1,5 +1,3 @@
-[img]https://raw.githubusercontent.com/LIghtJUNction/Jlib/main/Jlib/preview.png[/img]
-
 欢迎来到 Jlib！《缺氧》下一代高性能共享前置库。
 [b]所有下游模组共用一份高性能、标准兼容的提供者，彻底告别重复打包与版本冲突！[/b]
 订阅一次排在依赖 Mod 前面。殖民地规则不动，Jlib 不改变游戏原生玩法，但为整个 Mod 生态提供坚实底座。

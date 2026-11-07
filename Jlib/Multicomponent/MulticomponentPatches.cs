@@ -544,8 +544,12 @@ namespace Jlib.Multicomponent {
                 return;
 
             string suffix = FormatCompositionSuffix(snapshot);
-            if (!string.IsNullOrEmpty(suffix) && (__result[3] == null || !__result[3].EndsWith(suffix, StringComparison.Ordinal)))
-                __result[3] = (__result[3] ?? string.Empty) + suffix;
+            if (!string.IsNullOrEmpty(suffix)) {
+                if (__result[2] != null && !__result[2].Contains(suffix))
+                    __result[2] += suffix;
+                else if (__result[3] != null && !__result[3].Contains(suffix))
+                    __result[3] += suffix;
+            }
         }
     }
 }

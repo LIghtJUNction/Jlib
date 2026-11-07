@@ -118,5 +118,7 @@
     <RemoveDir Directories="$(JlibDistPath)/Jlib" Condition="'$(JlibDistPath)' != ''" />
     <Copy SourceFiles="$(JlibArtifactDir)/Jlib.zip" DestinationFolder="$(JlibDistPath)" Condition="'$(JlibDistPath)' != ''" />
     <Copy SourceFiles="@(JlibStagedModFiles)" DestinationFolder="$(JlibDistPath)/Jlib" Condition="'$(JlibDistPath)' != ''" />
+    <MakeDir Directories="$(JlibDistPath)/Jlib/docs" Condition="'$(JlibDistPath)' != '' and Exists('$(MSBuildProjectDirectory)/docs')" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/docs/steam-description-zh.md;$(MSBuildProjectDirectory)/docs/steam-description-en.md" DestinationFolder="$(JlibDistPath)/Jlib/docs" SkipUnchangedFiles="true" Condition="'$(JlibDistPath)' != '' and Exists('$(MSBuildProjectDirectory)/docs')" />
   </Target>
 </Project>

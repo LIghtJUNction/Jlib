@@ -14,6 +14,10 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Deterministic>true</Deterministic>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The consuming game projects may enforce warnings-as-errors globally.
+         Keep known legacy warnings in the shared PLib-compatible source as
+         warnings; do not weaken error handling or suppress other diagnostics. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS0168;CS0618;CS8602</WarningsNotAsErrors>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>LIghtJUNction.Jlib</PackageId>
     <Title>Jlib shared library for Oxygen Not Included</Title>

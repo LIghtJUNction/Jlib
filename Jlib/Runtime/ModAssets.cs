@@ -18,9 +18,17 @@ namespace Jlib.Runtime {
             internal int Generation;
         }
         private sealed class AnimRequest {
-            internal Assembly Owner;
-            internal string Name, Anim, Build;
-            internal string[] Textures;
+            internal readonly Assembly Owner;
+            internal readonly string Name, Anim, Build;
+            internal readonly string[] Textures;
+
+            internal AnimRequest(Assembly owner, string name, string anim, string build, string[] textures) {
+                Owner = owner;
+                Name = name;
+                Anim = anim;
+                Build = build;
+                Textures = (string[])textures.Clone();
+            }
         }
         private static readonly Dictionary<string, Scope> scopes = new Dictionary<string, Scope>();
         private static readonly List<AnimRequest> animations = new List<AnimRequest>();
@@ -40,12 +48,28 @@ namespace Jlib.Runtime {
             string path = PathFor(owner, relativePath);
             var scope = GetScope(owner);
             if (scope.Sprites.TryGetValue(path, out var sprite) && sprite != null) return sprite;
-            var bytes = File.ReadAllBytes(path);
-            var texture = new Texture2D(2, 2);
-            if (!texture.LoadImage(bytes)) { UnityEngine.Object.Destroy(texture); throw new InvalidDataException("Invalid image: " + path); }
-            sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f));
+            var texture = LoadTexture(path);
+            try {
+                sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f));
+            } catch {
+                UnityEngine.Object.Destroy(texture);
+                throw;
+            }
             scope.Sprites[path] = sprite;
             return sprite;
+        }
+
+        private static Texture2D LoadTexture(string path) {
+            var bytes = File.ReadAllBytes(path);
+            var texture = new Texture2D(2, 2);
+            try {
+                if (!texture.LoadImage(bytes))
+                    throw new InvalidDataException("Invalid image: " + path);
+                return texture;
+            } catch {
+                UnityEngine.Object.Destroy(texture);
+                throw;
+            }
         }
         /// <summary>Loads and caches a platform-compatible Unity AssetBundle.</summary>
         public static AssetBundle LoadBundle(Assembly owner, string relativePath) {
@@ -113,7 +137,7 @@ namespace Jlib.Runtime {
             foreach (var request in animations) if (request.Name == name) throw new InvalidOperationException("KAnim already queued: " + name);
             PathFor(owner, anim); PathFor(owner, build);
             foreach (var texture in textures) PathFor(owner, texture);
-            animations.Add(new AnimRequest { Owner = owner, Name = name, Anim = anim, Build = build, Textures = (string[])textures.Clone() });
+            animations.Add(new AnimRequest(owner, name, anim, build, textures));
         }
         [HarmonyPatch(typeof(Assets), "LoadAnims")]
         private static class AnimationPhase {
@@ -130,12 +154,8 @@ namespace Jlib.Runtime {
                     bool registered = false;
                     try {
                         mod = new KAnimFile.Mod { anim = File.ReadAllBytes(PathFor(item.Owner, item.Anim)), build = File.ReadAllBytes(PathFor(item.Owner, item.Build)) };
-                        foreach (var path in item.Textures) {
-                            var data = File.ReadAllBytes(PathFor(item.Owner, path));
-                            var image = new Texture2D(2, 2);
-                            if (!image.LoadImage(data)) { UnityEngine.Object.Destroy(image); throw new InvalidDataException("Invalid KAnim texture: " + path); }
-                            mod.textures.Add(image);
-                        }
+                        foreach (var path in item.Textures)
+                            mod.textures.Add(LoadTexture(PathFor(item.Owner, path)));
                         foreach (var existing in Assets.ModLoadedKAnims)
                             if (existing != null && existing.name == item.Name) throw new InvalidOperationException("KAnim name already exists: " + item.Name);
                         if (Assets.TryGetAnim(item.Name, out _)) throw new InvalidOperationException("KAnim name already exists: " + item.Name);

@@ -9,6 +9,9 @@
     <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8625</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.4.2" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="../Jlib/Runtime/JlibContract.cs" Link="Source/JlibContract.cs" />
     <Compile Include="../Jlib/Runtime/GameComponentReplacement.cs" Link="Source/GameComponentReplacement.cs" />
     <Compile Include="../Jlib/Runtime/MonoDllMap.cs" Link="Source/MonoDllMap.cs" />
@@ -17,6 +20,7 @@
     <Compile Include="../Jlib/Runtime/JlibDiagnostics.cs" Link="Source/JlibDiagnostics.cs" />
     <Compile Include="../Jlib/JlibApi.cs" Link="Source/JlibApi.cs" />
     <Compile Include="../Jlib/ModResources.cs" Link="Source/ModResources.cs" />
+    <Compile Include="../Jlib/Runtime/ModAssets.cs" Link="Source/ModAssets.cs" />
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />
   </ItemGroup>
 </Project>

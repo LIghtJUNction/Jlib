@@ -1,0 +1,98 @@
+name: Publish Jlib to NuGet
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified package to nuget.org
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: LIghtJUNction/OniMods
+          ref: f4a196b551a87b42ee383d6ee99feaee64698f19
+          path: .onim-reference
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.401'
+      - name: Fetch pinned compile-only ONI references
+        run: |
+          python3 .onim-reference/scripts/fetch_oni_reference_assemblies.py \
+            --manifest .onim-reference/ci/oni-reference-assemblies.json \
+            --output "$RUNNER_TEMP/oni-managed"
+          curl --fail --silent --show-error --location \
+            https://api.nuget.org/v3-flatcontainer/unityengine.modules/2021.3.33/unityengine.modules.2021.3.33.nupkg \
+            --output "$RUNNER_TEMP/unity-modules.nupkg"
+          echo 'd32d34526d89958c63220d3a5ce26c5c44c11bfd411a2e1fbc3200088ef160c4  '"$RUNNER_TEMP/unity-modules.nupkg" | sha256sum -c -
+          python3 - <<'PYTHON'
+          import hashlib, os, pathlib, zipfile
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          checks = {
+              'UnityEngine.AudioModule.dll': '95ccdaaf0138591de7c1b62d59c25fd4e8e0208969a1fca0ca6bd459bc2ae048',
+              'UnityEngine.AssetBundleModule.dll': '5df492899c74df34ea016a93d926f71c729c11f89486ad7738d02a64ba52b5e8',
+              'UnityEngine.UnityWebRequestAudioModule.dll': 'c4ad1b8966e52ec2269d114f02f8059d021f279e8d7e34b99cbb92869f8d998d',
+          }
+          with zipfile.ZipFile(root / 'unity-modules.nupkg') as archive:
+              for name, expected in checks.items():
+                  data = archive.read('lib/netstandard2.0/' + name)
+                  if hashlib.sha256(data).hexdigest() != expected:
+                      raise SystemExit('Incorrect module hash: ' + name)
+                  (root / 'oni-managed' / name).write_bytes(data)
+          PYTHON
+      - name: Build and test
+        run: |
+          dotnet pack Jlib/Jlib.csproj -c Release \
+            -p:OniManagedPath="$RUNNER_TEMP/oni-managed" \
+            -p:ImportDirectoryBuildProps=false \
+            -p:JlibArtifactDir="$RUNNER_TEMP/jlib-artifacts"
+          dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release
+      - name: Validate package contents
+        run: |
+          python3 - <<'PYTHON'
+          import os, pathlib, zipfile, xml.etree.ElementTree as ET
+          packages = list((pathlib.Path(os.environ['RUNNER_TEMP']) / 'jlib-artifacts' / 'nuget').glob('*.nupkg'))
+          if len(packages) != 1:
+              raise SystemExit('Expected exactly one package')
+          with zipfile.ZipFile(packages[0]) as archive:
+              names = set(archive.namelist())
+              required = {'lib/net48/Jlib.dll', 'lib/netstandard2.1/Jlib.dll', 'LICENSE', 'README.md'}
+              if not required.issubset(names):
+                  raise SystemExit('Required package files missing')
+              if any(name.lower().endswith('.dll') and not name.endswith('/Jlib.dll') for name in names):
+                  raise SystemExit('Unexpected bundled dependency DLL')
+              nuspec = next(name for name in names if name.endswith('.nuspec'))
+              root = ET.fromstring(archive.read(nuspec))
+              metadata = next(child for child in root if child.tag.endswith('metadata'))
+              fields = {child.tag.split('}')[-1]: (child.text or '') for child in metadata}
+              project = ET.parse('Jlib/Jlib.csproj').getroot()
+              expected_version = project.findtext('./PropertyGroup/Version')
+              if fields.get('id') != 'LIghtJUNction.Jlib' or not expected_version or fields.get('version') != expected_version:
+                  raise SystemExit('Unexpected package identity or version')
+          PYTHON
+      - name: NuGet trusted publishing login
+        if: inputs.publish
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        id: login
+        with:
+          user: LIghtJUNction
+      - name: Publish package
+        if: inputs.publish
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "$RUNNER_TEMP"/jlib-artifacts/nuget/LIghtJUNction.Jlib.*.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json

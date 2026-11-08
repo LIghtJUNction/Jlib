@@ -91,6 +91,51 @@ The source-tree version and the latest published NuGet version can differ. Check
 package version; new APIs described above require a provider built from this
 source version or a matching published release.
 
+## Managed Unity assets (source version)
+
+`Jlib.Runtime.ModAssets` uses the same explicit consumer assembly and Mod-relative
+path rules as `ModResources`. Call all methods from the Unity main thread after
+Jlib initializes. APIs are available in this source version; they are not in the
+published package until a matching Jlib provider and package are released.
+
+```csharp
+using Jlib.Runtime;
+using UnityEngine;
+
+var owner = typeof(MyMod).Assembly;
+Sprite icon = ModAssets.LoadSprite(owner, "assets/icon.png");
+Material material = ModAssets.LoadBundleAsset<Material>(owner, "assets/my.bundle", "MyMaterial");
+ModAssets.LoadAudio(owner, "assets/sound.ogg", AudioType.OGGVORBIS, (clip, error) => {
+    if (error != null) { Debug.LogError(error); return; }
+    ModAssets.PlayOneShot(myAudioSource, clip);
+});
+// During Mod initialization, before the game's Assets.LoadAnims stage:
+ModAssets.RegisterKAnim(owner, "my_machine_kanim", "custom/machine_anim.bytes",
+    "custom/machine_build.bytes", "custom/machine_0.png");
+// After stopping playback and releasing all user references:
+ModAssets.Release(owner);
+```
+
+Sprites, audio clips and bundles are cached by owning Mod and resolved path;
+audio also distinguishes `AudioType`. Concurrent audio requests can decode
+more than once but share the resulting cached clip. The callback runs on the
+main thread, including cache hits, and receives an exception on failure or if
+`Release` cancels an in-flight request. `PlayOneShot` uses Unity `AudioSource`,
+not the game's FMOD event system. Bundles must match the game's Unity version
+and target platform. `Release` destroys cached sprites, their textures and clips,
+and unloads bundles with `Unload(true)`; users must stop using all references
+first. KAnim assets belong to the game's animation system and are not released
+by this method.
+
+KAnim requests are queued before animation loading and registered during the
+game's normal animation load, before the animation table is finalized. This
+supports arbitrary Mod-relative input paths, not hot registration after startup.
+Names must be globally unique and end in `_kanim`. Errors encountered during
+registration are reported to `Player.log`; check the log and game behavior.
+Standard `anim/<category>/<name>/` content is already loaded by the game and
+should not also be registered through this API. The caller supplies texture paths
+in the order required by its exported animation.
+
 ## Consumer resources & options
 
 `Jlib.Runtime.ModResources` resolves files from the owning Mod's `ContentPath`,

@@ -58,6 +58,9 @@
     <Reference Include="FMODUnity" HintPath="$(OniManagedPath)/FMODUnity.dll" Private="false" />
     <Reference Include="Newtonsoft.Json" HintPath="$(OniManagedPath)/Newtonsoft.Json.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(OniManagedPath)/UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(OniManagedPath)/UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(OniManagedPath)/UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule" HintPath="$(OniManagedPath)/UnityEngine.UnityWebRequestAudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(OniManagedPath)/UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(OniManagedPath)/UnityEngine.ImageConversionModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(OniManagedPath)/UnityEngine.InputLegacyModule.dll" Private="false" />

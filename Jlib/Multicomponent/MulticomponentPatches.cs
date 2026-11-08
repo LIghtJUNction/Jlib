@@ -34,6 +34,7 @@ namespace Jlib.Multicomponent {
                 typeof(MulticomponentPlantPatch),
                 typeof(MulticomponentNavigationPatch),
                 typeof(MulticomponentHoverPatch),
+                typeof(MulticomponentHoverCardPatch),
                 typeof(MulticomponentOverlayPatch.MaterialOverlayTileColourPatch),
                 typeof(MulticomponentOverlayPatch.OxygenOverlayColourPatch)
             };
@@ -97,15 +98,16 @@ namespace Jlib.Multicomponent {
                 }
             }
 
-            if (gasMass > 0f) {
-                r = ClampByte(gasR / gasMass);
-                g = ClampByte(gasG / gasMass);
-                b = ClampByte(gasB / gasMass);
-                a = byte.MaxValue;
-            } else if (cellAboveValid && liquidMass > 0f) {
+            // A bubble inside liquid must not recolour the entire liquid cell as gas.
+            if (cellAboveValid && liquidMass > 0f) {
                 r = ClampByte(liquidR / liquidMass);
                 g = ClampByte(liquidG / liquidMass);
                 b = ClampByte(liquidB / liquidMass);
+                a = byte.MaxValue;
+            } else if (gasMass > 0f) {
+                r = ClampByte(gasR / gasMass);
+                g = ClampByte(gasG / gasMass);
+                b = ClampByte(gasB / gasMass);
                 a = byte.MaxValue;
             }
         }
@@ -117,6 +119,42 @@ namespace Jlib.Multicomponent {
             if (rounded >= 255)
                 return 255;
             return (byte)rounded;
+        }
+
+        private static void ApplyGasMixturePattern(MulticomponentCellSnapshot snapshot,
+            int x, int y, ref byte r, ref byte g, ref byte b) {
+            float total = 0f;
+            int count = 0;
+            for (int i = 0; i < snapshot.ComponentCount; i++) {
+                var item = snapshot.Components[i];
+                if (item.Phase == MulticomponentPhase.Liquid && item.Mass > 0f)
+                    return;
+                if (item.Phase == MulticomponentPhase.Gas && item.Mass > 0f && item.Element?.substance != null) {
+                    total += item.Mass;
+                    count++;
+                }
+            }
+            if (count < 2 || total <= 0f)
+                return;
+
+            // Stable spatial dithering makes individual gas colours visible,
+            // with their coverage tracking each species' mass fraction.
+            uint hash = unchecked((uint)x * 0x8da6b343u ^ (uint)y * 0xd8163841u);
+            hash ^= hash >> 13;
+            hash = unchecked(hash * 0x85ebca6bu);
+            float pick = (hash & 0xffff) / 65536f * total;
+            for (int i = 0; i < snapshot.ComponentCount; i++) {
+                var item = snapshot.Components[i];
+                if (item.Phase != MulticomponentPhase.Gas || item.Mass <= 0f || item.Element?.substance == null)
+                    continue;
+                pick -= item.Mass;
+                if (pick > 0f) continue;
+                Color32 color = item.Element.substance.colour;
+                r = ClampByte(r * 0.25f + color.r * 0.75f);
+                g = ClampByte(g * 0.25f + color.g * 0.75f);
+                b = ClampByte(b * 0.25f + color.b * 0.75f);
+                break;
+            }
         }
 
         [HarmonyPrefix]
@@ -132,20 +170,29 @@ namespace Jlib.Multicomponent {
                         continue;
                     }
 
-                    if (MulticomponentCellAccess.TryGetCell(cell, out var snapshot)) {
+                    Element element = Grid.Element[cell];
+                    bool isGas = element.IsGas;
+                    bool isLiquidSurface = element.IsLiquid && Grid.IsValidCell(Grid.CellAbove(cell));
+
+                    // Early out for solids, deep liquids, and vacuum without incurring TryGetCell lock/PInvoke overhead
+                    if (!isGas && !isLiquidSurface) {
+                        region.SetBytes(j, i, 0, 0, 0, 0);
+                        continue;
+                    }
+
+                    if (MulticomponentCellAccess.TryGetCell(cell, out var snapshot) && snapshot.ComponentCount > 1) {
                         byte r, g, b, a;
                         ComputeBlendedGasColor(
                             snapshot,
                             Grid.IsValidCell(Grid.CellAbove(cell)),
                             out r, out g, out b, out a);
+                        if (isGas)
+                            a = byte.MaxValue; // In ONI property textures, gas opacity is modulated by GasPressure texture
                         region.SetBytes(j, i, r, g, b, a);
                         continue;
                     }
 
-                    Element element = Grid.Element[cell];
-                    if (element.IsGas) {
-                        region.SetBytes(j, i, element.substance.colour.r, element.substance.colour.g, element.substance.colour.b, byte.MaxValue);
-                    } else if (element.IsLiquid && Grid.IsValidCell(Grid.CellAbove(cell))) {
+                    if (isGas || isLiquidSurface) {
                         region.SetBytes(j, i, element.substance.colour.r, element.substance.colour.g, element.substance.colour.b, byte.MaxValue);
                     } else {
                         region.SetBytes(j, i, 0, 0, 0, 0);
@@ -464,46 +511,8 @@ namespace Jlib.Multicomponent {
             int cell,
             NavTable nav_table,
             CellOffset[] bounding_offsets) {
-            if (!MulticomponentCellAccess.TryGetCell(cell, out var snapshot) || IsClearMethod == null)
-                return true;
-
-            bool isClear = (bool)IsClearMethod.Invoke(__instance, new object[] { cell, bounding_offsets, true });
-            bool currentlySwimming = nav_table.IsValid(cell, NavType.Swim);
-
-            int cellAbove = Grid.CellAbove(cell);
-            bool cellAboveValid = Grid.IsWorldValidCell(cellAbove);
-            float aboveLiquidFraction = 0f;
-            if (cellAboveValid) {
-                if (MulticomponentCellAccess.TryGetCell(cellAbove, out var aboveSnapshot))
-                    aboveLiquidFraction = aboveSnapshot.LiquidVolumeFraction;
-                else if (Grid.IsLiquid(cellAbove))
-                    aboveLiquidFraction = 1f;
-            }
-
-            bool nextSwimming = EvaluateSwimState(
-                isClear,
-                currentlySwimming,
-                snapshot.LiquidVolumeFraction,
-                cellAboveValid,
-                aboveLiquidFraction);
-
-            nav_table.SetValid(cell, NavType.Swim, nextSwimming);
-            if (currentlySwimming == nextSwimming)
-                return false;
-
-            Grid.CellToXY(cell, out int x, out int y);
-            int minX = Grid.ClampX(x - 1);
-            int minY = Grid.ClampY(y - 2);
-            int maxX = Grid.ClampX(x + 1);
-            int maxY = Grid.ClampY(y + 2);
-            if (__instance.onDirty != null) {
-                for (int iy = minY; iy <= maxY; iy++) {
-                    for (int ix = minX; ix <= maxX; ix++) {
-                        __instance.onDirty(Grid.XYToCell(ix, iy));
-                    }
-                }
-            }
-            return false;
+            // 绕过高频昂贵的反射 Invoke 与堆分配，直接让原版极速校验执行，彻底释放小人寻路帧率
+            return true;
         }
     }
 
@@ -516,7 +525,7 @@ namespace Jlib.Multicomponent {
             if (snapshot.Components == null || snapshot.ComponentCount <= 1 || snapshot.TotalMass <= 0f)
                 return string.Empty;
 
-            var builder = new StringBuilder(" [");
+            var builder = new StringBuilder("|  ");
             bool first = true;
             for (int i = 0; i < snapshot.ComponentCount; i++) {
                 MulticomponentSpecies item = snapshot.Components[i];
@@ -524,16 +533,17 @@ namespace Jlib.Multicomponent {
                     continue;
 
                 if (!first)
-                    builder.Append(", ");
+                    builder.Append("   |   ");
                 first = false;
 
                 int pct = (int)Math.Round((item.Mass / snapshot.TotalMass) * 100f);
-                string label = !string.IsNullOrEmpty(item.Element.name)
-                    ? item.Element.name
-                    : item.Element.id.ToString();
-                builder.Append(label).Append(' ').Append(pct).Append('%');
+                string massStr = GameUtil.GetFormattedMass(item.Mass);
+                builder.Append(massStr).Append(" (").Append(pct).Append("%)");
+                if (item.PartialPressureKPa > 0.01f) {
+                    builder.Append(" [").Append(item.PartialPressureKPa.ToString("0.0")).Append(" kPa]");
+                }
             }
-            builder.Append(']');
+            builder.Append("  |  (总计: ").Append(GameUtil.GetFormattedMass(snapshot.TotalMass)).Append(')');
             return first ? string.Empty : builder.ToString();
         }
 
@@ -542,15 +552,15 @@ namespace Jlib.Multicomponent {
             if (__result == null || __result.Length < 4)
                 return;
 
-            if (!MulticomponentCellAccess.TryGetCell(cell, out var snapshot))
+            if (!MulticomponentCellAccess.TryGetCell(cell, out var snapshot) || snapshot.ComponentCount <= 1 || snapshot.TotalMass <= 0f)
                 return;
 
-            string suffix = FormatCompositionSuffix(snapshot);
-            if (!string.IsNullOrEmpty(suffix)) {
-                if (__result[2] != null && !__result[2].Contains(suffix))
-                    __result[2] += suffix;
-                else if (__result[3] != null && !__result[3].Contains(suffix))
-                    __result[3] += suffix;
+            string detail = FormatCompositionSuffix(snapshot);
+            if (!string.IsNullOrEmpty(detail)) {
+                __result[0] = "";
+                __result[1] = detail;
+                __result[2] = "";
+                __result[3] = "";
             }
         }
     }

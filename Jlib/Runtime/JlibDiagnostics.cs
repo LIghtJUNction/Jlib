@@ -394,6 +394,9 @@ namespace Jlib.Runtime {
         /// <remarks>
         /// The owner must have exactly one patch in the selected stage. Harmony removes patches
         /// by owner and stage; ambiguous selections are refused without changing the pipeline.
+        /// The owner "*" is refused because Harmony treats it as an all-owner removal wildcard.
+        /// A change is also refused when another patch in that stage has the same priority,
+        /// since Harmony's public API cannot restore the original registration index on failure.
         /// </remarks>
         public static bool AdjustPatchPriority(
             MethodBase originalMethod,
@@ -424,6 +427,10 @@ namespace Jlib.Runtime {
                 message = "补丁所有者为空";
                 return false;
             }
+            if (owner == "*") {
+                message = "所有者 * 是 Harmony 的批量移除通配符，无法单独调整该补丁";
+                return false;
+            }
 
             try {
                 var info = Harmony.GetPatchInfo(originalMethod);
@@ -446,6 +453,14 @@ namespace Jlib.Runtime {
 
                 var existingPatch = owned[0];
                 int currentPriority = existingPatch.priority;
+                if (deltaPriority == 0) {
+                    message = $"补丁 [{patchMethod.Name}] 的声明优先级保持 {currentPriority}";
+                    return true;
+                }
+                if (targetList.Any(p => !ReferenceEquals(p, existingPatch) && p.priority == currentPriority)) {
+                    message = "该阶段有相同声明优先级的补丁；重新注册无法保留原注册顺序，调整已取消";
+                    return false;
+                }
                 int newPriority = checked(currentPriority + deltaPriority);
                 if (newPriority == -1)
                     throw new ArgumentOutOfRangeException(nameof(deltaPriority), "Harmony 将 -1 保留为默认优先级标记");

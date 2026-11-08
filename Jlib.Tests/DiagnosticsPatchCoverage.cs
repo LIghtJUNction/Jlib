@@ -10,6 +10,7 @@ internal static class DiagnosticsPatchCoverage {
     private static readonly MethodInfo Target = Method(nameof(Original));
     private static readonly MethodInfo Prefix = Method(nameof(CountCall));
     private static int calls;
+    private static int transpilerRuns;
 
     internal static void Run() {
         InvalidRequestsPreservePatches();
@@ -17,6 +18,8 @@ internal static class DiagnosticsPatchCoverage {
         MultipleOwnerPatchesAreRefused();
         PriorityChangesPreserveMetadata();
         FailedReorderingRestoresPatch();
+        EqualPriorityReorderingIsRefused();
+        WildcardOwnerIsRefused();
     }
 
     private static void InvalidRequestsPreservePatches() {
@@ -50,12 +53,13 @@ internal static class DiagnosticsPatchCoverage {
     private static void SharedMethodsKeepOtherRegistrations() {
         var harmony = new Harmony(Owner);
         var other = new Harmony(OtherOwner);
-        harmony.Patch(Target, prefix: new HarmonyMethod(Prefix), postfix: new HarmonyMethod(Prefix));
+        harmony.Patch(Target, prefix: new HarmonyMethod(Prefix) { priority = Priority.High },
+            postfix: new HarmonyMethod(Prefix));
         other.Patch(Target, prefix: new HarmonyMethod(Prefix));
         try {
             Program.Check(JlibDiagnostics.AdjustPatchPriority(Target, Prefix, "Prefix", Owner, 50, out _),
                 "unique owner and stage can be reordered");
-            AssertPrefix(Owner, Priority.Normal + 50, "selected owner priority changed");
+            AssertPrefix(Owner, Priority.High + 50, "selected owner priority changed");
             AssertPrefix(OtherOwner, Priority.Normal, "other owner remains registered");
             var info = Harmony.GetPatchInfo(Target);
             Program.Equal(2, info.Prefixes.Count, "shared prefix has both owners");
@@ -129,6 +133,56 @@ internal static class DiagnosticsPatchCoverage {
         }
     }
 
+    private static void EqualPriorityReorderingIsRefused() {
+        var target = Method(nameof(OriginalValue));
+        var first = Method(nameof(ReplaceOneWithTwo));
+        var harmony = new Harmony(Owner);
+        var other = new Harmony(OtherOwner);
+        harmony.Patch(target, transpiler: new HarmonyMethod(first));
+        other.Patch(target, transpiler: new HarmonyMethod(Method(nameof(ReplaceRemainingOne))));
+        try {
+            Program.Equal(2, OriginalValue(), "equal-priority transpilers execute in registration order");
+            string registrations = Describe(Harmony.GetPatchInfo(target).Transpilers);
+            int runs = transpilerRuns;
+            Program.Check(!JlibDiagnostics.AdjustPatchPriority(target, first, "Transpiler", Owner, -50, out _),
+                "ambiguous equal-priority adjustment refused");
+            Program.Equal(2, OriginalValue(), "equal-priority refusal preserves original executable behavior");
+            Program.Equal(registrations, Describe(Harmony.GetPatchInfo(target).Transpilers),
+                "equal-priority refusal preserves registration indices");
+            Program.Equal(runs, transpilerRuns, "equal-priority refusal does not rebuild the pipeline");
+            Program.Check(JlibDiagnostics.AdjustPatchPriority(target, first, "Transpiler", Owner, 0, out _),
+                "zero adjustment succeeds without replacing the patch");
+            Program.Equal(runs, transpilerRuns, "zero adjustment does not rebuild the pipeline");
+            Program.Equal(registrations, Describe(Harmony.GetPatchInfo(target).Transpilers),
+                "zero adjustment preserves registration indices");
+        } finally {
+            harmony.Unpatch(target, HarmonyPatchType.All, "*");
+        }
+    }
+
+    private static void WildcardOwnerIsRefused() {
+        var harmony = new Harmony("*");
+        var other = new Harmony(OtherOwner);
+        harmony.Patch(Target, prefix: new HarmonyMethod(Prefix) { priority = Priority.High });
+        other.Patch(Target, prefix: new HarmonyMethod(Prefix));
+        try {
+            string registrations = Describe(Harmony.GetPatchInfo(Target).Prefixes);
+            bool adjusted = JlibDiagnostics.AdjustPatchPriority(Target, Prefix, "Prefix", "*", 50, out _);
+            Program.Equal(2, Harmony.GetPatchInfo(Target).Prefixes.Count, "wildcard request preserves both owners");
+            Program.Check(!adjusted, "wildcard owner is refused");
+            Program.Equal(registrations, Describe(Harmony.GetPatchInfo(Target).Prefixes),
+                "wildcard refusal preserves registrations and priorities");
+            calls = 0;
+            Original();
+            Program.Equal(2, calls, "wildcard refusal preserves both executable patches");
+        } finally {
+            harmony.Unpatch(Target, HarmonyPatchType.All, "*");
+        }
+    }
+
+    private static string Describe(IEnumerable<Patch> patches) => string.Join("|",
+        patches.Select(p => $"{p.owner}:{p.priority}:{p.index}"));
+
     private static Patch AssertPrefix(string owner, int priority, string scenario) {
         var patch = Harmony.GetPatchInfo(Target).Prefixes.SingleOrDefault(p => p.owner == owner && p.PatchMethod == Prefix);
         Program.Check(patch != null, scenario + " exists");
@@ -150,6 +204,7 @@ internal static class DiagnosticsPatchCoverage {
     private static void UnusedPrefix() { }
 
     private static IEnumerable<CodeInstruction> ReplaceOneWithTwo(IEnumerable<CodeInstruction> instructions) {
+        transpilerRuns++;
         var code = instructions.ToList();
         var literal = code.SingleOrDefault(instruction => instruction.opcode == OpCodes.Ldc_I4_1);
         if (literal == null)
@@ -159,6 +214,7 @@ internal static class DiagnosticsPatchCoverage {
     }
 
     private static IEnumerable<CodeInstruction> ReplaceRemainingOne(IEnumerable<CodeInstruction> instructions) {
+        transpilerRuns++;
         foreach (var instruction in instructions) {
             if (instruction.opcode == OpCodes.Ldc_I4_1)
                 instruction.opcode = OpCodes.Ldc_I4_3;

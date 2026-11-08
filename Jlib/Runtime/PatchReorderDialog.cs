@@ -160,6 +160,8 @@ namespace Jlib.Runtime {
                     OnClick = _ => {
                         if (JlibDiagnostics.AdjustPatchPriority(originalMethod, patch.PatchMethod, patch.PatchType, patch.Owner, +50, out string msg)) {
                             Show();
+                        } else {
+                            PUIElements.ShowMessageDialog(null, msg);
                         }
                     }
                 }.SetKleiPinkStyle());
@@ -171,6 +173,8 @@ namespace Jlib.Runtime {
                     OnClick = _ => {
                         if (JlibDiagnostics.AdjustPatchPriority(originalMethod, patch.PatchMethod, patch.PatchType, patch.Owner, -50, out string msg)) {
                             Show();
+                        } else {
+                            PUIElements.ShowMessageDialog(null, msg);
                         }
                     }
                 }.SetKleiBlueStyle());

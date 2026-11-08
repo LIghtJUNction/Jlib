@@ -34,12 +34,12 @@ Jlib 继承并保留了 PLib 的完整公开 API 与 `PeterHan.PLib.*` 命名空
 ## Mod 开发引用
 
 NuGet 包：[LIghtJUNction.Jlib](https://www.nuget.org/packages/LIghtJUNction.Jlib)。
-当前分支的源码版本为 `0.3.0`；已发布版本以 NuGet 包页为准。
+当前分支的源码版本为 `0.3.1`；已发布版本以 NuGet 包页为准。
 需要 `ReplaceSimDll` / `ReplaceNativeLibrary` 时请要求最低版本 `0.3.0`。
 下面使用源码版本作为引用示例：
 
 ```xml
-<PackageReference Include="LIghtJUNction.Jlib" Version="0.3.0" ExcludeAssets="runtime" />
+<PackageReference Include="LIghtJUNction.Jlib" Version="0.3.1" ExcludeAssets="runtime" />
 ```
 
 直接引用源码时，将 `ProjectReference` 的 `Private` 设为 `false`。

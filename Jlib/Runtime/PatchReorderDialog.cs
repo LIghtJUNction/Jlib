@@ -14,9 +14,8 @@ using UnityEngine;
 
 namespace Jlib.Runtime {
     /// <summary>
-    /// Interactive draggable window allowing players and modders to inspect active
-    /// Harmony hooks, view caller pipelines, dynamically adjust patch execution and override
-    /// order, and trigger live debugging diagnostics.
+    /// Draggable window for inspecting Harmony hooks, adjusting declared patch priorities,
+    /// and viewing live diagnostics. Explicit ordering constraints remain in effect.
     /// </summary>
     public static class PatchReorderDialog {
         private static GameObject activeDialog;
@@ -30,7 +29,7 @@ namespace Jlib.Runtime {
                 }
 
                 var dialog = new PDialog("JlibPatchReorderDialog") {
-                    Title = "Jlib 补丁覆盖流水线与实时调试器 / Harmony Pipeline & Debugger",
+                    Title = "Jlib 补丁优先级与实时调试器 / Harmony Priorities & Debugger",
                     Draggable = true,
                     Size = new Vector2(880f, 620f),
                     MaxSize = new Vector2(1100f, 800f),
@@ -43,9 +42,8 @@ namespace Jlib.Runtime {
 
                 // Header instructions
                 dialog.Body.AddChild(new PLabel("Instructions") {
-                    Text = "【动态补丁覆盖流水线调试】\n" +
-                           "系统已动态枚举当前游戏中所有活动的 Harmony 挂钩。Prefix 按优先级从大到小依次先于原方法执行；\n" +
-                           "点击 [▲ 提前] 或 [▼ 延后] 即可实时重置补丁 Priority 并即时生效，排查与解决 Mod 冲突！",
+                    Text = "每个阶段按声明优先级从高到低列出；最终执行顺序还受 before/after 约束及注册顺序影响。\n" +
+                           "按钮调整 Priority 后重新应用补丁，并保留模组声明的排序约束。",
                     TextStyle = PUITuning.Fonts.TextLightStyle
                 });
 
@@ -150,15 +148,15 @@ namespace Jlib.Runtime {
                 };
 
                 row.AddChild(new PLabel("PatchDesc") {
-                    Text = $"#{i + 1} [{patch.PatchType}] Mod: {patch.Owner} | 优先级: {patch.Priority}\n   方法: {patch.MethodSignature}",
+                    Text = $"#{i + 1} [{patch.PatchType}] Mod: {patch.Owner} | 声明优先级: {patch.Priority}\n   方法: {patch.MethodSignature}",
                     TextStyle = PUITuning.Fonts.TextLightStyle,
                     FlexSize = new Vector2(1f, 0f)
                 });
 
-                // Move Up button
+                // Increase declared priority
                 row.AddChild(new PButton("MoveUp") {
-                    Text = "▲ 提前",
-                    ToolTip = "增加补丁优先级（+50），使其在流水线中更早执行",
+                    Text = "▲ +50",
+                    ToolTip = "增加声明优先级（+50）；实际顺序仍受 before/after 约束",
                     OnClick = _ => {
                         if (JlibDiagnostics.AdjustPatchPriority(originalMethod, patch.PatchMethod, patch.PatchType, patch.Owner, +50, out string msg)) {
                             Show();
@@ -166,10 +164,10 @@ namespace Jlib.Runtime {
                     }
                 }.SetKleiPinkStyle());
 
-                // Move Down button
+                // Decrease declared priority
                 row.AddChild(new PButton("MoveDown") {
-                    Text = "▼ 延后",
-                    ToolTip = "降低补丁优先级（-50），使其在流水线中更晚执行",
+                    Text = "▼ -50",
+                    ToolTip = "降低声明优先级（-50）；实际顺序仍受 before/after 约束",
                     OnClick = _ => {
                         if (JlibDiagnostics.AdjustPatchPriority(originalMethod, patch.PatchMethod, patch.PatchType, patch.Owner, -50, out string msg)) {
                             Show();

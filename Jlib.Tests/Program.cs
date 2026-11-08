@@ -19,6 +19,7 @@ internal static partial class Program {
             ContractCoverage.Run();
             GameComponentReplacementCoverage.Run();
             DiagnosticsContract();
+            DiagnosticsPatchCoverage.Run();
             SourceContract.Run(args);
             Console.WriteLine($"PASS: {assertions} assertions; real ownership, resource, and contract helpers, no game DLLs executed.");
             return 0;
@@ -261,5 +262,6 @@ namespace PeterHan.PLib.Core {
     public static partial class PUtil {
         public static void LogDebug(string message) { }
         public static void LogWarning(string message) { }
+        public static void LogError(string message) { }
     }
 }

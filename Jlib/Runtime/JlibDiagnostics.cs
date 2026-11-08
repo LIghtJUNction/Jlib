@@ -11,11 +11,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using PeterHan.PLib.Core;
-
-#if !JLIB_HOST_TESTS
 using HarmonyLib;
-#endif
+using PeterHan.PLib.Core;
 
 namespace Jlib.Runtime {
     /// <summary>
@@ -77,7 +74,6 @@ namespace Jlib.Runtime {
         }
     }
 
-#if !JLIB_HOST_TESTS
     /// <summary>
     /// Information about a single patch applied via Harmony.
     /// </summary>
@@ -120,7 +116,6 @@ namespace Jlib.Runtime {
             Finalizers = finalizers.AsReadOnly();
         }
     }
-#endif
 
     /// <summary>
     /// Dynamic interface discovery, invocation profiling, caller attribution,
@@ -305,8 +300,8 @@ namespace Jlib.Runtime {
             }
             sb.AppendLine();
 
-#if !JLIB_HOST_TESTS
-            sb.AppendLine("--- 3. Harmony 补丁覆盖流水线与优先级顺序 (Hook Order & Pipelines) ---");
+            sb.AppendLine("--- 3. Harmony 补丁与声明优先级 (Declared Patch Priorities) ---");
+            sb.AppendLine("各阶段按声明优先级从高到低列出；before/after 约束及注册顺序也参与最终执行顺序。");
             var hooked = GetHookedMethods();
             if (hooked.Count == 0) {
                 sb.AppendLine("当前没有检测到活动的 Harmony 补丁。");
@@ -315,21 +310,21 @@ namespace Jlib.Runtime {
                 foreach (var method in hooked.Take(50)) {
                     sb.AppendLine($"[挂钩方法] {method.MethodName}");
                     if (method.Prefixes.Count > 0) {
-                        sb.AppendLine("  Prefix 执行流水线 (前置补丁，按运行顺序从先到后):");
+                        sb.AppendLine("  Prefix 声明优先级列表 (前置补丁):");
                         for (int i = 0; i < method.Prefixes.Count; i++) {
                             var p = method.Prefixes[i];
                             sb.AppendLine($"    #{i + 1} Owner: {p.Owner} | Priority: {p.Priority} | Method: {p.MethodSignature}");
                         }
                     }
                     if (method.Transpilers.Count > 0) {
-                        sb.AppendLine("  Transpiler 流水线 (转译补丁):");
+                        sb.AppendLine("  Transpiler 声明优先级列表 (转译补丁):");
                         for (int i = 0; i < method.Transpilers.Count; i++) {
                             var p = method.Transpilers[i];
                             sb.AppendLine($"    #{i + 1} Owner: {p.Owner} | Priority: {p.Priority} | Method: {p.MethodSignature}");
                         }
                     }
                     if (method.Postfixes.Count > 0) {
-                        sb.AppendLine("  Postfix 执行流水线 (后置补丁):");
+                        sb.AppendLine("  Postfix 声明优先级列表 (后置补丁):");
                         for (int i = 0; i < method.Postfixes.Count; i++) {
                             var p = method.Postfixes[i];
                             sb.AppendLine($"    #{i + 1} Owner: {p.Owner} | Priority: {p.Priority} | Method: {p.MethodSignature}");
@@ -341,7 +336,6 @@ namespace Jlib.Runtime {
                     sb.AppendLine($"... 另有 {hooked.Count - 50} 个挂钩方法未在简报中展开。可在游戏内调试面板中查看全部。");
                 }
             }
-#endif
             sb.AppendLine("================================================================================");
             return sb.ToString();
         }
@@ -352,9 +346,9 @@ namespace Jlib.Runtime {
             PUtil.LogWarning("\n" + report);
         }
 
-#if !JLIB_HOST_TESTS
         /// <summary>
-        /// Inspects all currently patched methods in Harmony and sorts their execution pipelines.
+        /// Inspects Harmony patches by stage in descending declared priority.
+        /// Harmony's before/after constraints and registration order also affect execution order.
         /// </summary>
         public static IReadOnlyList<HookedMethodInfo> GetHookedMethods() {
             var list = new List<HookedMethodInfo>();
@@ -394,9 +388,13 @@ namespace Jlib.Runtime {
         }
 
         /// <summary>
-        /// Dynamically adjusts a patch's priority and repatches the target method in Harmony,
-        /// instantly modifying the execution/override pipeline order without restarting the game.
+        /// Updates a patch's declared priority and rebuilds its Harmony pipeline.
+        /// Explicit ordering constraints remain in effect.
         /// </summary>
+        /// <remarks>
+        /// The owner must have exactly one patch in the selected stage. Harmony removes patches
+        /// by owner and stage; ambiguous selections are refused without changing the pipeline.
+        /// </remarks>
         public static bool AdjustPatchPriority(
             MethodBase originalMethod,
             MethodInfo patchMethod,
@@ -412,6 +410,20 @@ namespace Jlib.Runtime {
                 message = "补丁方法为空";
                 return false;
             }
+            HarmonyPatchType type;
+            switch (patchType) {
+                case "Prefix": type = HarmonyPatchType.Prefix; break;
+                case "Postfix": type = HarmonyPatchType.Postfix; break;
+                case "Transpiler": type = HarmonyPatchType.Transpiler; break;
+                case "Finalizer": type = HarmonyPatchType.Finalizer; break;
+                default:
+                    message = $"不支持的补丁类型: {patchType}";
+                    return false;
+            }
+            if (string.IsNullOrWhiteSpace(owner)) {
+                message = "补丁所有者为空";
+                return false;
+            }
 
             try {
                 var info = Harmony.GetPatchInfo(originalMethod);
@@ -420,50 +432,46 @@ namespace Jlib.Runtime {
                     return false;
                 }
 
-                int currentPriority = 400; // Harmony Priority.Normal default
-                IEnumerable<Patch> targetList = patchType switch {
-                    "Prefix" => info.Prefixes,
-                    "Postfix" => info.Postfixes,
-                    "Transpiler" => info.Transpilers,
-                    "Finalizer" => info.Finalizers,
-                    _ => null
+                IEnumerable<Patch> targetList = type switch {
+                    HarmonyPatchType.Prefix => info.Prefixes,
+                    HarmonyPatchType.Postfix => info.Postfixes,
+                    HarmonyPatchType.Transpiler => info.Transpilers,
+                    _ => info.Finalizers
                 };
-
-                var existingPatch = targetList?.FirstOrDefault(p => p.PatchMethod == patchMethod);
-                if (existingPatch != null) {
-                    currentPriority = existingPatch.priority;
+                var owned = targetList.Where(p => string.Equals(p.owner, owner, StringComparison.Ordinal)).ToArray();
+                if (owned.Length != 1 || owned[0].PatchMethod != patchMethod) {
+                    message = "未找到唯一匹配的补丁；同一所有者在该阶段注册多个补丁时无法单独调整";
+                    return false;
                 }
 
-                int newPriority = currentPriority + deltaPriority;
-                var harmony = new Harmony(owner ?? "LIghtJUNction.Jlib.OrderManager");
-
-                // Unpatch the specific method
-                harmony.Unpatch(originalMethod, patchMethod);
-
-                // Re-apply with adjusted priority
+                var existingPatch = owned[0];
+                int currentPriority = existingPatch.priority;
+                int newPriority = checked(currentPriority + deltaPriority);
+                if (newPriority == -1)
+                    throw new ArgumentOutOfRangeException(nameof(deltaPriority), "Harmony 将 -1 保留为默认优先级标记");
+                var harmony = new Harmony(owner);
                 var harmonyMethod = new HarmonyMethod(patchMethod) {
-                    priority = newPriority
+                    priority = newPriority,
+                    before = existingPatch.before,
+                    after = existingPatch.after,
+                    debug = existingPatch.debug
                 };
 
-                switch (patchType) {
-                    case "Prefix":
-                        harmony.Patch(originalMethod, prefix: harmonyMethod);
-                        break;
-                    case "Postfix":
-                        harmony.Patch(originalMethod, postfix: harmonyMethod);
-                        break;
-                    case "Transpiler":
-                        harmony.Patch(originalMethod, transpiler: harmonyMethod);
-                        break;
-                    case "Finalizer":
-                        harmony.Patch(originalMethod, finalizer: harmonyMethod);
-                        break;
-                    default:
-                        message = $"不支持的补丁类型: {patchType}";
-                        return false;
+                // Removing by MethodInfo would also remove other owners and stages.
+                harmony.Unpatch(originalMethod, type, owner);
+                try {
+                    ApplyPatch(harmony, originalMethod, type, harmonyMethod);
+                } catch (Exception applyError) {
+                    harmonyMethod.priority = currentPriority;
+                    try {
+                        ApplyPatch(harmony, originalMethod, type, harmonyMethod);
+                    } catch (Exception restoreError) {
+                        throw new AggregateException("补丁调整失败且恢复失败，请重启游戏", applyError, restoreError);
+                    }
+                    throw;
                 }
 
-                message = $"已将补丁 [{patchMethod.Name}] 的优先级调整为 {newPriority} (原: {currentPriority})，执行顺序已刷新！";
+                message = $"已将补丁 [{patchMethod.Name}] 的声明优先级调整为 {newPriority} (原: {currentPriority})，补丁已重新应用";
                 if (DebugMode) {
                     PUtil.LogDebug($"[Jlib Diagnostics] {message}");
                 }
@@ -474,6 +482,12 @@ namespace Jlib.Runtime {
                 return false;
             }
         }
-#endif
+
+        private static void ApplyPatch(Harmony harmony, MethodBase original, HarmonyPatchType type,
+                HarmonyMethod patch) => harmony.Patch(original,
+                    prefix: type == HarmonyPatchType.Prefix ? patch : null,
+                    postfix: type == HarmonyPatchType.Postfix ? patch : null,
+                    transpiler: type == HarmonyPatchType.Transpiler ? patch : null,
+                    finalizer: type == HarmonyPatchType.Finalizer ? patch : null);
     }
 }

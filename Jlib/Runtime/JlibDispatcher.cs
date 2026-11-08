@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Jlib.Runtime {
     /// <summary>
     /// Thread-safe double-buffered dispatcher bridging background worker threads to Unity's main thread.
-    /// Provides zero-allocation lock-free queue swapping during render frames.
+    /// Swaps queued batches under a short lock, then runs actions outside the lock.
     /// </summary>
     public sealed class JlibDispatcher : MonoBehaviour {
         private static JlibDispatcher _instance;

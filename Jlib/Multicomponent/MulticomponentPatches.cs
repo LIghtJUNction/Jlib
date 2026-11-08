@@ -14,7 +14,7 @@ namespace Jlib.Multicomponent {
     /// <summary>
     /// Master installer for all multicomponent game shims, unlocking ONI's hardcoded
     /// single-element assumptions across visual rendering, duplicant respiration,
-    /// building operation, plant vitality, and swimming navigation.
+    /// building operation, and plant vitality.
     /// </summary>
     public static class MulticomponentPatches {
         private static bool _installed;
@@ -32,7 +32,6 @@ namespace Jlib.Multicomponent {
                 typeof(MulticomponentBuildingPatch.ElementConsumerAvailablePatch),
                 typeof(MulticomponentBuildingPatch.VentValidOutputCellPatch),
                 typeof(MulticomponentPlantPatch),
-                typeof(MulticomponentNavigationPatch),
                 typeof(MulticomponentHoverPatch),
                 typeof(MulticomponentHoverCardPatch),
                 typeof(MulticomponentOverlayPatch.MaterialOverlayTileColourPatch),
@@ -119,42 +118,6 @@ namespace Jlib.Multicomponent {
             if (rounded >= 255)
                 return 255;
             return (byte)rounded;
-        }
-
-        private static void ApplyGasMixturePattern(MulticomponentCellSnapshot snapshot,
-            int x, int y, ref byte r, ref byte g, ref byte b) {
-            float total = 0f;
-            int count = 0;
-            for (int i = 0; i < snapshot.ComponentCount; i++) {
-                var item = snapshot.Components[i];
-                if (item.Phase == MulticomponentPhase.Liquid && item.Mass > 0f)
-                    return;
-                if (item.Phase == MulticomponentPhase.Gas && item.Mass > 0f && item.Element?.substance != null) {
-                    total += item.Mass;
-                    count++;
-                }
-            }
-            if (count < 2 || total <= 0f)
-                return;
-
-            // Stable spatial dithering makes individual gas colours visible,
-            // with their coverage tracking each species' mass fraction.
-            uint hash = unchecked((uint)x * 0x8da6b343u ^ (uint)y * 0xd8163841u);
-            hash ^= hash >> 13;
-            hash = unchecked(hash * 0x85ebca6bu);
-            float pick = (hash & 0xffff) / 65536f * total;
-            for (int i = 0; i < snapshot.ComponentCount; i++) {
-                var item = snapshot.Components[i];
-                if (item.Phase != MulticomponentPhase.Gas || item.Mass <= 0f || item.Element?.substance == null)
-                    continue;
-                pick -= item.Mass;
-                if (pick > 0f) continue;
-                Color32 color = item.Element.substance.colour;
-                r = ClampByte(r * 0.25f + color.r * 0.75f);
-                g = ClampByte(g * 0.25f + color.g * 0.75f);
-                b = ClampByte(b * 0.25f + color.b * 0.75f);
-                break;
-            }
         }
 
         [HarmonyPrefix]
@@ -479,13 +442,11 @@ namespace Jlib.Multicomponent {
     }
 
     /// <summary>
-    /// Swimming hysteresis navigation shim.
+    /// Swimming hysteresis evaluator for consumers that manage navigation.
     /// </summary>
-    [HarmonyPatch(typeof(GameNavGrids.DupeSwimValidator), "UpdateCell")]
     public static class MulticomponentNavigationPatch {
         public const float SwimEntryVolumeFraction = 0.40f;
         public const float SwimExitVolumeFraction = 0.20f;
-        private static readonly MethodInfo IsClearMethod = AccessTools.Method(typeof(NavTableValidator), "IsClear");
 
         public static bool EvaluateSwimState(
             bool isClear,
@@ -505,15 +466,6 @@ namespace Jlib.Multicomponent {
                 && cellAboveLiquidVolumeFraction >= threshold;
         }
 
-        [HarmonyPrefix]
-        private static bool Prefix(
-            GameNavGrids.DupeSwimValidator __instance,
-            int cell,
-            NavTable nav_table,
-            CellOffset[] bounding_offsets) {
-            // 绕过高频昂贵的反射 Invoke 与堆分配，直接让原版极速校验执行，彻底释放小人寻路帧率
-            return true;
-        }
     }
 
     /// <summary>

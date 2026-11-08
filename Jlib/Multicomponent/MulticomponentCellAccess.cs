@@ -15,7 +15,7 @@ namespace Jlib.Multicomponent {
     /// original single-element game logic without overhead.
     /// </summary>
     public static class MulticomponentCellAccess {
-        private static IMulticomponentCellProvider provider;
+        private static IMulticomponentCellProvider provider = null;
         private static int providerFailureReported;
         private static bool enabled = true;
 

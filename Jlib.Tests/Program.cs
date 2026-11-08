@@ -16,6 +16,7 @@ internal static partial class Program {
             OwnershipContract();
             ResourceContract();
             ModAssetsCoverage.Run();
+            MulticomponentCoverage.Run();
             ContractCoverage.Run();
             GameComponentReplacementCoverage.Run();
             DiagnosticsContract();

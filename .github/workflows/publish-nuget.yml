@@ -61,7 +61,9 @@ jobs:
             -p:OniManagedPath="$RUNNER_TEMP/oni-managed" \
             -p:ImportDirectoryBuildProps=false \
             -p:JlibArtifactDir="$RUNNER_TEMP/jlib-artifacts"
-          dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release
+          dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release -- \
+            --inspect Jlib/bin/Release/net48/Jlib.dll Jlib/bin/Release/netstandard2.1/Jlib.dll \
+            --inspect-package "$RUNNER_TEMP/jlib-artifacts/Jlib.zip"
       - name: Validate package contents
         run: |
           python3 - <<'PYTHON'

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using HarmonyLib;
@@ -15,8 +16,13 @@ namespace Jlib.Multicomponent {
         private static readonly FieldInfo FirstBar = AccessTools.Field(typeof(HoverTextDrawer), "firstShadowBar");
         private static readonly FieldInfo MaxShadowX = AccessTools.Field(typeof(HoverTextDrawer), "maxShadowX");
 
-        private static int _lastDrawnFrame = -1;
-        private static int _lastDrawnCell = -1;
+        private static readonly ConditionalWeakTable<HoverTextDrawer, DrawState> LastDrawn =
+            new ConditionalWeakTable<HoverTextDrawer, DrawState>();
+
+        private sealed class DrawState {
+            internal int Frame = -1;
+            internal int Cell = -1;
+        }
 
         public static bool DrawCardsOrTitle(HoverTextDrawer drawer, string title, TextStyleSetting style) {
             int cell = Grid.PosToCell(Camera.main.ScreenToWorldPoint(KInputManager.GetMousePos()));
@@ -27,18 +33,19 @@ namespace Jlib.Multicomponent {
                 return false;
             }
 
-            if (Time.frameCount == _lastDrawnFrame && cell == _lastDrawnCell) {
-                // 当前帧已绘制过该格子的多组分卡片，坚决不重复绘制！
-                return true;
-            }
-            _lastDrawnFrame = Time.frameCount;
-            _lastDrawnCell = cell;
-
-            // 关闭调用方此前开启的外层 ShadowBar，避免卡片阴影条嵌套或重叠
+            // The transpiler skips the caller's EndShadowBar on every true
+            // result, including a duplicate draw in this frame.
             drawer.EndShadowBar();
 
-            Vector2 originalRoot = (Vector2)RootPos.GetValue(drawer);
-            Vector2 start = (Vector2)CurrentPos.GetValue(drawer);
+            DrawState state = LastDrawn.GetValue(drawer, _ => new DrawState());
+            if (Time.frameCount == state.Frame && cell == state.Cell) {
+                return true;
+            }
+            state.Frame = Time.frameCount;
+            state.Cell = cell;
+
+            Vector2 originalRoot = (Vector2)RootPos.GetValue(drawer)!;
+            Vector2 start = (Vector2)CurrentPos.GetValue(drawer)!;
             start.x = originalRoot.x;
             float x = start.x, bottom = start.y;
             for (int i = 0; i < snapshot.ComponentCount; i++) {
@@ -65,10 +72,10 @@ namespace Jlib.Multicomponent {
                         text.Append(paragraph.Substring(offset, Math.Min(wrap, paragraph.Length - offset))).Append('\n');
                 }
                 drawer.DrawText(text.ToString(), style);
-                float maximum = (float)MaxShadowX.GetValue(drawer);
+                float maximum = (float)MaxShadowX.GetValue(drawer)!;
                 MaxShadowX.SetValue(drawer, Math.Max(maximum, x + width));
                 drawer.EndShadowBar();
-                bottom = Math.Min(bottom, ((Vector2)CurrentPos.GetValue(drawer)).y);
+                bottom = Math.Min(bottom, ((Vector2)CurrentPos.GetValue(drawer)!).y);
                 x += width + 18;
             }
             RootPos.SetValue(drawer, originalRoot);

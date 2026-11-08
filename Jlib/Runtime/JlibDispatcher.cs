@@ -58,7 +58,7 @@ namespace Jlib.Runtime {
                 try {
                     action();
                 } catch (Exception ex) {
-                    Debug.LogError("[Jlib] Dispatcher uncaught action error: " + ex);
+                    UnityEngine.Debug.LogError("[Jlib] Dispatcher uncaught action error: " + ex);
                 }
             }
         }

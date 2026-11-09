@@ -17,11 +17,11 @@ not install the game mod. Jlib itself does not change colony gameplay.
 
 ## Consumer contract
 
-- Assembly: `Jlib`, version `0.3.1.0`; mod static ID: `LIghtJUNction.Jlib`.
+- Assembly: `Jlib`, version `0.3.2.0`; mod static ID: `LIghtJUNction.Jlib`.
 - `Jlib.Runtime.JlibApi.AbiVersion` is the public integer constant `1`.
   ABI must match exactly. New methods that existing callers can ignore stay on ABI 1;
   `Version` is how a consumer asks for those methods.
-- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.3.1`), and `PLibVersion` identify the provider.
+- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.3.2`), and `PLibVersion` identify the provider.
 - `CheckCompatibility(requiredAbi, minimumVersion)` reports a `JlibCompatibility` result.
   `RequireCompatibility` throws `JlibCompatibilityException` when that result is not compatible.
 - `DiscoverProviders(requiredAbi, minimumVersion)` reflects over assemblies already loaded
@@ -37,14 +37,14 @@ not install the game mod. Jlib itself does not change colony gameplay.
   `PeterHan.PLib.Core.PUtil.RegisterModAssembly` keeps its previous behavior for existing
   PLib callers and does not apply these extra checks.
 - Retained PLib component protocol: `4.25.0.0`.
-- NuGet package: `LIghtJUNction.Jlib` version `0.3.1`, targets `net48` and `netstandard2.1`.
+- NuGet package: `LIghtJUNction.Jlib` version `0.3.2`, targets `net48` and `netstandard2.1`.
 - `ReplaceNativeLibrary` / `ReplaceSimDll` redirect a Mono P/Invoke DLL name (for example
   `SimDLL`) for one loaded managed assembly's MonoImage to an absolute native library path.
   Call only in the Unity Mono game process before `Game.Instance` exists. The mapping cannot
   be undone without a restart. Official ABI checks of the replacement binary stay with the
   caller. Prefer `minimumVersion: "0.3.0"` when you need these methods.
 
-Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.3.1" ExcludeAssets="runtime"`
+Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.3.2" ExcludeAssets="runtime"`
 or a project reference with `Private="false"`. Do not merge the shared assembly
 or include `Jlib.dll` / `PLib*.dll` in a consumer release. A consumer that has
 Jlib-dependent types must validate and load the enabled Jlib provider **before**
@@ -90,6 +90,22 @@ The source-tree version and the latest published NuGet version can differ. Check
 [NuGet](https://www.nuget.org/packages/LIghtJUNction.Jlib) before selecting a
 package version; new APIs described above require a provider built from this
 source version or a matching published release.
+
+## Bounded multicomponent reads (0.3.2)
+
+`IMulticomponentCellBatchProvider` is an optional extension to the existing
+single-cell provider. `MulticomponentCellAccess.TryGetCellBatch` accepts up to
+128 consecutive cells. The provider must copy publication records and release
+any native read lease before returning; element resolution and rendering then
+consume the copy without holding that lease. A provider that declines the
+request continues to serve the existing single-cell path.
+
+The returned `IMulticomponentCellBatch` belongs to the invocation and its
+acquiring thread. Consume each borrowed snapshot before the next read on that
+batch, and dispose the batch in `finally`. The visual patch uses this interface
+without changing the shared color calculation or the original provider API.
+Consumers that reference the new types must require Jlib **0.3.2** before their
+implementation assemblies are loaded. ABI remains `1` for existing consumers.
 
 ## Managed Unity assets (source version)
 

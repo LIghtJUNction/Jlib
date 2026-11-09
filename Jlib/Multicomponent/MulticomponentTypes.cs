@@ -68,4 +68,22 @@ namespace Jlib.Multicomponent {
         bool IsReady { get; }
         bool TryGetCell(int cell, out MulticomponentCellSnapshot snapshot);
     }
+
+    /// <summary>
+    /// Optional bounded bulk read. Implementations copy publication data before
+    /// returning; no native lease may remain held while the caller uses a batch.
+    /// Existing single-cell providers do not need to implement this interface.
+    /// </summary>
+    public interface IMulticomponentCellBatchProvider {
+        bool TryGetCellBatch(int firstCell, int count, out IMulticomponentCellBatch batch);
+    }
+
+    /// <summary>
+    /// An invocation-owned, same-thread reader. Dispose after the region is
+    /// consumed, including exceptional exits. A snapshot is borrowed until the
+    /// next read on this batch or disposal. False permits a single-cell fallback.
+    /// </summary>
+    public interface IMulticomponentCellBatch : IDisposable {
+        bool TryGetCell(int cell, out MulticomponentCellSnapshot snapshot);
+    }
 }

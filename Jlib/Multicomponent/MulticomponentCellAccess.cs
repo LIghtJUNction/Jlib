@@ -15,6 +15,7 @@ namespace Jlib.Multicomponent {
     /// original single-element game logic without overhead.
     /// </summary>
     public static class MulticomponentCellAccess {
+        public const int MaximumBatchCells = 128;
         private static IMulticomponentCellProvider provider = null;
         private static int providerFailureReported;
         private static bool enabled = true;
@@ -69,6 +70,52 @@ namespace Jlib.Multicomponent {
                 snapshot = default;
                 ReportProviderFailure(error);
                 return false;
+            }
+        }
+
+        public static bool TryGetCellBatch(int firstCell, int count, out IMulticomponentCellBatch batch) {
+            batch = null;
+            if (!enabled || firstCell < 0 || count <= 0 || count > MaximumBatchCells)
+                return false;
+            var current = Volatile.Read(ref provider) as IMulticomponentCellBatchProvider;
+            if (current == null)
+                return false;
+            try {
+                if (current.TryGetCellBatch(firstCell, count, out batch) && batch != null)
+                    return true;
+            } catch (Exception error) {
+                ReportProviderFailure(error);
+            }
+            ReleaseBatch(batch);
+            batch = null;
+            return false;
+        }
+
+        public static bool TryGetCell(IMulticomponentCellBatch batch, int cell,
+            out MulticomponentCellSnapshot snapshot) {
+            snapshot = default;
+            if (!enabled)
+                return false;
+            if (batch != null) {
+                try {
+                    if (batch.TryGetCell(cell, out snapshot) && IsValid(snapshot))
+                        return true;
+                } catch (Exception error) {
+                    ReportProviderFailure(error);
+                }
+            }
+            // A bounded batch may decline an unusually large or invalid cell.
+            // Keep the existing provider's per-cell behavior in that case.
+            return TryGetCell(cell, out snapshot);
+        }
+
+        public static void ReleaseBatch(IMulticomponentCellBatch batch) {
+            if (batch == null)
+                return;
+            try {
+                batch.Dispose();
+            } catch (Exception error) {
+                ReportProviderFailure(error);
             }
         }
 

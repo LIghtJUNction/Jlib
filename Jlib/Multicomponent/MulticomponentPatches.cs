@@ -126,40 +126,72 @@ namespace Jlib.Multicomponent {
                 return true;
 
             for (int i = y0; i <= y1; i++) {
-                for (int j = x0; j <= x1; j++) {
-                    int cell = Grid.XYToCell(j, i);
-                    if (!Grid.IsActiveWorld(cell)) {
-                        region.SetBytes(j, i, 0, 0, 0, 0);
+                for (int firstX = x0; firstX <= x1; firstX++) {
+                    int firstCell = Grid.XYToCell(firstX, i);
+                    if (!Grid.IsActiveWorld(firstCell)) {
+                        region.SetBytes(firstX, i, 0, 0, 0, 0);
+                        continue;
+                    }
+                    Element firstElement = Grid.Element[firstCell];
+                    if (!firstElement.IsGas && !(firstElement.IsLiquid && Grid.IsValidCell(Grid.CellAbove(firstCell)))) {
+                        region.SetBytes(firstX, i, 0, 0, 0, 0);
                         continue;
                     }
 
-                    Element element = Grid.Element[cell];
-                    bool isGas = element.IsGas;
-                    bool isLiquidSurface = element.IsLiquid && Grid.IsValidCell(Grid.CellAbove(cell));
-
-                    // Early out for solids, deep liquids, and vacuum without incurring TryGetCell lock/PInvoke overhead
-                    if (!isGas && !isLiquidSurface) {
-                        region.SetBytes(j, i, 0, 0, 0, 0);
-                        continue;
+                    int limit = (int)Math.Min((long)x1,
+                        (long)firstX + MulticomponentCellAccess.MaximumBatchCells - 1);
+                    int lastX = firstX;
+                    while (lastX < limit) {
+                        int nextCell = Grid.XYToCell(lastX + 1, i);
+                        if (!Grid.IsActiveWorld(nextCell))
+                            break;
+                        Element nextElement = Grid.Element[nextCell];
+                        if (!nextElement.IsGas && !(nextElement.IsLiquid && Grid.IsValidCell(Grid.CellAbove(nextCell))))
+                            break;
+                        lastX++;
                     }
 
-                    if (MulticomponentCellAccess.TryGetCell(cell, out var snapshot) && snapshot.ComponentCount > 1) {
-                        byte r, g, b, a;
-                        ComputeBlendedGasColor(
-                            snapshot,
-                            Grid.IsValidCell(Grid.CellAbove(cell)),
-                            out r, out g, out b, out a);
-                        if (isGas)
-                            a = byte.MaxValue; // In ONI property textures, gas opacity is modulated by GasPressure texture
-                        region.SetBytes(j, i, r, g, b, a);
-                        continue;
-                    }
+                    IMulticomponentCellBatch batch = null;
+                    try {
+                        // Copy only consecutive eligible cells: isolated cells
+                        // retain their single-cell read instead of copying a
+                        // mostly solid region. The scan is only a batching hint;
+                        // consumption below rechecks the current Grid state.
+                        if (lastX > firstX)
+                            MulticomponentCellAccess.TryGetCellBatch(firstCell, lastX - firstX + 1, out batch);
+                        for (int j = firstX; j <= lastX; j++) {
+                            int cell = Grid.XYToCell(j, i);
+                            if (!Grid.IsActiveWorld(cell)) {
+                                region.SetBytes(j, i, 0, 0, 0, 0);
+                                continue;
+                            }
 
-                    if (isGas || isLiquidSurface) {
-                        region.SetBytes(j, i, element.substance.colour.r, element.substance.colour.g, element.substance.colour.b, byte.MaxValue);
-                    } else {
-                        region.SetBytes(j, i, 0, 0, 0, 0);
+                            Element element = Grid.Element[cell];
+                            bool isGas = element.IsGas;
+                            bool isLiquidSurface = element.IsLiquid && Grid.IsValidCell(Grid.CellAbove(cell));
+                            if (!isGas && !isLiquidSurface) {
+                                region.SetBytes(j, i, 0, 0, 0, 0);
+                                continue;
+                            }
+
+                            if (MulticomponentCellAccess.TryGetCell(batch, cell, out var snapshot)
+                                && snapshot.ComponentCount > 1) {
+                                byte r, g, b, a;
+                                ComputeBlendedGasColor(snapshot, Grid.IsValidCell(Grid.CellAbove(cell)),
+                                    out r, out g, out b, out a);
+                                if (isGas)
+                                    a = byte.MaxValue; // GasPressure supplies gas opacity.
+                                region.SetBytes(j, i, r, g, b, a);
+                                continue;
+                            }
+                            region.SetBytes(j, i, element.substance.colour.r, element.substance.colour.g,
+                                element.substance.colour.b, byte.MaxValue);
+                        }
                     }
+                    finally {
+                        MulticomponentCellAccess.ReleaseBatch(batch);
+                    }
+                    firstX = lastX;
                 }
             }
             return false;

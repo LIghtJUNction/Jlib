@@ -14,6 +14,7 @@ internal static partial class Program {
             Equal(Jlib.Runtime.JlibCompatibilityStatus.Compatible, loaded.Status, "the test host sees one real JlibApi");
             Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
             OwnershipContract();
+            WorkSelectionCoverage.Run();
             ResourceContract();
             ModAssetsCoverage.Run();
             MulticomponentCoverage.Run();

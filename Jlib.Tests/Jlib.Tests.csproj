@@ -9,6 +9,11 @@
     <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8625</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Jlib/Multicomponent/VersionedCellColors.cs" Link="Source/VersionedCellColors.cs" />
+    <Compile Include="../Jlib/Runtime/BoundedWorkSelection.cs" Link="Source/BoundedWorkSelection.cs" />
+    <Compile Include="../Jlib/Runtime/PartitionedWorkIndex.cs" Link="Source/PartitionedWorkIndex.cs" />
+    <Compile Include="../Jlib/Runtime/IndexedCandidates.cs" Link="Source/IndexedCandidates.cs" />
+    <Compile Include="../Jlib/Runtime/OrderedCandidateIndex.cs" Link="Source/OrderedCandidateIndex.cs" />
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
   <ItemGroup>

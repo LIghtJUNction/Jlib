@@ -21,6 +21,14 @@ namespace Jlib.Multicomponent {
         private static bool enabled = true;
         internal static object ProviderIdentity => Volatile.Read(ref provider);
 
+        public static ulong ContentRevision {
+            get {
+                if (!enabled) return 0;
+                try { return (Volatile.Read(ref provider) as IMulticomponentRevisionProvider)?.ContentRevision ?? 0; }
+                catch (Exception error) { ReportProviderFailure(error); return 0; }
+            }
+        }
+
         public static bool Enabled {
             get => enabled;
             set => enabled = value;

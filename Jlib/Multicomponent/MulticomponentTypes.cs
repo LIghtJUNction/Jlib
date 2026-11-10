@@ -69,6 +69,11 @@ namespace Jlib.Multicomponent {
         bool TryGetCell(int cell, out MulticomponentCellSnapshot snapshot);
     }
 
+    /// <summary>Optional cheap, process-monotonic content revision; zero disables caching.</summary>
+    public interface IMulticomponentRevisionProvider {
+        ulong ContentRevision { get; }
+    }
+
     /// <summary>
     /// Optional bounded bulk read. Implementations copy publication data before
     /// returning; no native lease may remain held while the caller uses a batch.

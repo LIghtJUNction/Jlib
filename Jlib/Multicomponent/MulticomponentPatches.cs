@@ -111,6 +111,33 @@ namespace Jlib.Multicomponent {
             }
         }
 
+        private static readonly object ColorCacheGate = new object();
+        private static VersionedCellColors colorCache;
+        private static object colorProvider;
+        private static int colorCells;
+
+        private static VersionedCellColors GetColorCache(int cells) {
+            var provider = MulticomponentCellAccess.ProviderIdentity;
+            lock (ColorCacheGate) {
+                if (colorCache == null || !ReferenceEquals(provider, colorProvider) || colorCells != cells) {
+                    colorCache = new VersionedCellColors(cells);
+                    colorProvider = provider;
+                    colorCells = cells;
+                }
+                return colorCache;
+            }
+        }
+
+        private static uint ColorContext(Element element, bool aboveValid) {
+            var color = element.substance.colour;
+            return (uint)(color.r | color.g << 8 | color.b << 16
+                | (element.IsGas ? 1 << 24 : 0) | (aboveValid ? 1 << 25 : 0));
+        }
+
+        private static uint Pack(byte r, byte g, byte b, byte a) {
+            return (uint)(r | g << 8 | b << 16 | a << 24);
+        }
+
         private static byte ClampByte(float value) {
             int rounded = (int)Math.Round(value);
             if (rounded <= 0)
@@ -125,6 +152,8 @@ namespace Jlib.Multicomponent {
             if (!MulticomponentCellAccess.IsReady)
                 return true;
 
+            ulong revision = MulticomponentCellAccess.ContentRevision;
+            var cache = revision == 0 ? null : GetColorCache(Grid.CellCount);
             for (int i = y0; i <= y1; i++) {
                 for (int firstX = x0; firstX <= x1; firstX++) {
                     int firstCell = Grid.XYToCell(firstX, i);
@@ -135,6 +164,14 @@ namespace Jlib.Multicomponent {
                     Element firstElement = Grid.Element[firstCell];
                     if (!firstElement.IsGas && !(firstElement.IsLiquid && Grid.IsValidCell(Grid.CellAbove(firstCell)))) {
                         region.SetBytes(firstX, i, 0, 0, 0, 0);
+                        continue;
+                    }
+
+                    bool firstAboveValid = Grid.IsValidCell(Grid.CellAbove(firstCell));
+                    if (cache != null && cache.TryGet(firstCell, revision,
+                            ColorContext(firstElement, firstAboveValid), out uint cachedColor)) {
+                        region.SetBytes(firstX, i, (byte)cachedColor, (byte)(cachedColor >> 8),
+                            (byte)(cachedColor >> 16), (byte)(cachedColor >> 24));
                         continue;
                     }
 
@@ -159,6 +196,8 @@ namespace Jlib.Multicomponent {
                         // consumption below rechecks the current Grid state.
                         if (lastX > firstX)
                             MulticomponentCellAccess.TryGetCellBatch(firstCell, lastX - firstX + 1, out batch);
+                        // If publication changed while copying, draw the new data but
+                        // never label it with the older cache revision.
                         for (int j = firstX; j <= lastX; j++) {
                             int cell = Grid.XYToCell(j, i);
                             if (!Grid.IsActiveWorld(cell)) {
@@ -174,18 +213,23 @@ namespace Jlib.Multicomponent {
                                 continue;
                             }
 
-                            if (MulticomponentCellAccess.TryGetCell(batch, cell, out var snapshot)
-                                && snapshot.ComponentCount > 1) {
+                            bool hasSnapshot = MulticomponentCellAccess.TryGetCell(batch, cell, out var snapshot);
+                            if (hasSnapshot && snapshot.ComponentCount > 1) {
                                 byte r, g, b, a;
                                 ComputeBlendedGasColor(snapshot, Grid.IsValidCell(Grid.CellAbove(cell)),
                                     out r, out g, out b, out a);
                                 if (isGas)
                                     a = byte.MaxValue; // GasPressure supplies gas opacity.
                                 region.SetBytes(j, i, r, g, b, a);
+                                if (cache != null && MulticomponentCellAccess.ContentRevision == revision)
+                                    cache.Store(cell, revision, ColorContext(element, Grid.IsValidCell(Grid.CellAbove(cell))), Pack(r, g, b, a));
                                 continue;
                             }
                             region.SetBytes(j, i, element.substance.colour.r, element.substance.colour.g,
                                 element.substance.colour.b, byte.MaxValue);
+                            if (hasSnapshot && cache != null && MulticomponentCellAccess.ContentRevision == revision)
+                                cache.Store(cell, revision, ColorContext(element, Grid.IsValidCell(Grid.CellAbove(cell))),
+                                    Pack(element.substance.colour.r, element.substance.colour.g, element.substance.colour.b, byte.MaxValue));
                         }
                     }
                     finally {

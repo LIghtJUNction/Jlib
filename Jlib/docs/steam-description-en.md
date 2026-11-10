@@ -2,7 +2,8 @@ Welcome to Jlib! The high-performance shared prerequisite mod for **Oxygen Not I
 [b]Downstream mods share one unified, PLib-compatible provider instead of packaging duplicate copies and version conflicts.[/b]
 Subscribe once, place it above dependent mods, and leave colony rules alone. Jlib does not alter vanilla gameplay mechanics.
 
-[h2]Current Stage: v0.3.3[/h2]
+[h2]Current Stage: v0.3.4[/h2]
+Version 0.3.4 adds optional indexed fetch work, bounded navigation selection and publication-revision colour caching for consumers such as CycleTrim. Host tests passed; in-game performance acceptance remains pending.
 [i]Public ABI: 1. Retained PLib component protocol: 4.25.0.0.[/i]
 [i]Enable one copy of static ID LIghtJUNction.Jlib.[/i]
 

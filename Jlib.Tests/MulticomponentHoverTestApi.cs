@@ -3,7 +3,9 @@ using UnityEngine;
 
 // Drawing-state boundaries for the production hover helper. No Unity renderer
 // or game assembly is loaded; shadow-bar pairing is checked independently.
+public enum SimHashes { Oxygen, ContaminatedOxygen, CarbonDioxide }
 public sealed class Element {
+    public SimHashes id;
     public string name = "";
     public float maxMass;
     public string nameUpperCase => name.ToUpperInvariant();

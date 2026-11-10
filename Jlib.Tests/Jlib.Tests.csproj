@@ -22,6 +22,8 @@
     <Compile Include="../Jlib/ModResources.cs" Link="Source/ModResources.cs" />
     <Compile Include="../Jlib/Runtime/ModAssets.cs" Link="Source/ModAssets.cs" />
     <Compile Include="../Jlib/Multicomponent/MulticomponentTypes.cs" Link="Source/MulticomponentTypes.cs" />
+    <Compile Include="../Jlib/Multicomponent/BreathableGas.cs" Link="Source/BreathableGas.cs" />
+    <Compile Include="../Jlib/Multicomponent/RenderCellCache.cs" Link="Source/RenderCellCache.cs" />
     <Compile Include="../Jlib/Multicomponent/MulticomponentCellAccess.cs" Link="Source/MulticomponentCellAccess.cs" />
     <Compile Include="../Jlib/Multicomponent/MulticomponentHoverCardPatch.cs" Link="Source/MulticomponentHoverCardPatch.cs" />
     <Compile Include="../PLibCore/PUtil.ModOwnership.cs" Link="Source/PUtil.ModOwnership.cs" />

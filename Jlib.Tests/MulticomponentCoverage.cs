@@ -3,6 +3,15 @@ using UnityEngine;
 
 internal static class MulticomponentCoverage {
     internal static void Run() {
+        var gases = new[] {
+            new MulticomponentSpecies(new Element { id = SimHashes.Oxygen }, MulticomponentPhase.Gas, .4f, 300f, 0f, 0f),
+            new MulticomponentSpecies(new Element { id = SimHashes.ContaminatedOxygen }, MulticomponentPhase.Gas, .6f, 300f, 0f, 0f),
+            new MulticomponentSpecies(new Element { id = SimHashes.CarbonDioxide }, MulticomponentPhase.Gas, 2f, 300f, 0f, 0f)
+        };
+        var gasSnapshot = new MulticomponentCellSnapshot(gases, 3, 3f, 0f, 0f, 0f);
+        Program.Equal(1f, BreathableGas.Mass(gasSnapshot), "polluted oxygen counts as breathable; CO2 does not");
+        Array.Reverse(gases);
+        Program.Equal(1f, BreathableGas.Mass(gasSnapshot), "primary species ordering cannot change breathability");
         var style = new TextStyleSetting();
         var fallback = new HoverTextDrawer();
         fallback.BeginShadowBar();
@@ -12,6 +21,7 @@ internal static class MulticomponentCoverage {
         Program.Equal(1, fallback.OpenShadowBars, "fallback leaves the caller's cleanup intact");
         fallback.EndShadowBar();
 
+        RenderCellCacheCoverage.Run();
         var provider = new Provider();
         int originalFrame = Time.frameCount;
         Vector3 originalMouse = KInputManager.MousePosition;

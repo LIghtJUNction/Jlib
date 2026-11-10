@@ -19,6 +19,7 @@ namespace Jlib.Multicomponent {
         private static IMulticomponentCellProvider provider = null;
         private static int providerFailureReported;
         private static bool enabled = true;
+        internal static object ProviderIdentity => Volatile.Read(ref provider);
 
         public static bool Enabled {
             get => enabled;

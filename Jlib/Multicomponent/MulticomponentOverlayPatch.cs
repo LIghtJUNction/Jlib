@@ -11,13 +11,22 @@ namespace Jlib.Multicomponent
     /// </summary>
     public static class MulticomponentOverlayPatch
     {
+        private static readonly AccessTools.FieldRef<SimDebugView, int> RenderFrame =
+            AccessTools.FieldRefAccess<SimDebugView, int>("currentFrame");
+        [ThreadStatic] private static RenderCellCache cells;
+
+        private static bool TryGetRenderCell(SimDebugView view, int cell, out MulticomponentCellSnapshot snapshot)
+        {
+            if (cells == null) cells = new RenderCellCache();
+            return cells.TryGetCell(cell, Grid.CellCount, RenderFrame(view), view, out snapshot);
+        }
         [HarmonyPatch(typeof(SimDebugView), "GetTileColour")]
         public static class MaterialOverlayTileColourPatch
         {
             [HarmonyPostfix]
-            public static void Postfix(int cell, ref Color __result)
+            public static void Postfix(SimDebugView instance, int cell, ref Color __result)
             {
-                if (!MulticomponentCellAccess.TryGetCell(cell, out var snapshot))
+                if (!TryGetRenderCell(instance, cell, out var snapshot))
                     return;
 
                 if (snapshot.Components == null || snapshot.ComponentCount <= 1 || snapshot.TotalMass <= 0f)
@@ -50,29 +59,24 @@ namespace Jlib.Multicomponent
         public static class OxygenOverlayColourPatch
         {
             [HarmonyPostfix]
-            public static void Postfix(int cell, ref Color __result)
+            public static void Postfix(SimDebugView instance, int cell, ref Color __result)
             {
-                if (!MulticomponentCellAccess.TryGetCell(cell, out var snapshot))
+                if (Grid.IsLiquid(cell) || Grid.Solid[cell])
+                    return;
+                if (!TryGetRenderCell(instance, cell, out var snapshot))
                     return;
 
                 if (snapshot.Components == null || snapshot.ComponentCount <= 1 || snapshot.TotalMass <= 0f)
                     return;
 
-                // 计算氧气占比
-                float o2Mass = 0f;
-                for (int i = 0; i < snapshot.ComponentCount; i++)
-                {
-                    var item = snapshot.Components[i];
-                    if (item.Element != null && item.Element.id == SimHashes.Oxygen)
-                    {
-                        o2Mass += item.Mass;
-                    }
-                }
-
-                float o2Fraction = Mathf.Clamp01(o2Mass / snapshot.TotalMass);
-                // 蓝（可呼吸）与黑/红（不可呼吸）根据实际氧气摩尔分压平滑插值
-                Color unbreathable = Color.black;
-                __result = Color.Lerp(unbreathable, __result, o2Fraction);
+                // Recompute the native pressure scale from all breathable gas.
+                // Scaling the old primary-element colour by pure-O2 fraction
+                // makes polluted oxygen black and causes dominance flicker.
+                float mass = BreathableGas.Mass(snapshot);
+                __result = mass > SimDebugView.minimumBreathable
+                    ? instance.breathableGradient.Evaluate(Mathf.Clamp01(
+                        (mass - SimDebugView.minimumBreathable) / SimDebugView.optimallyBreathable))
+                    : (Color)instance.unbreathableColour;
             }
         }
     }

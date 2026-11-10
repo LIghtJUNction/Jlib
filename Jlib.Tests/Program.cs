@@ -15,6 +15,7 @@ internal static partial class Program {
             Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
             OwnershipContract();
             WorkSelectionCoverage.Run();
+            SimulationFrameSchedulerCoverage.Run();
             ResourceContract();
             ModAssetsCoverage.Run();
             MulticomponentCoverage.Run();

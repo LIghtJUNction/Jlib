@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <DefineConstants>$(DefineConstants);JLIB_HOST_TESTS</DefineConstants>
+    <DefineConstants>$(DefineConstants);JLIB_HOST_TESTS;JLIB_PROPERTY_TEXTURE_REVISION_CACHE_TESTS</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8625</NoWarn>
   </PropertyGroup>
@@ -14,7 +14,14 @@
     <Compile Include="../Jlib/Runtime/PartitionedWorkIndex.cs" Link="Source/PartitionedWorkIndex.cs" />
     <Compile Include="../Jlib/Runtime/IndexedCandidates.cs" Link="Source/IndexedCandidates.cs" />
     <Compile Include="../Jlib/Runtime/OrderedCandidateIndex.cs" Link="Source/OrderedCandidateIndex.cs" />
+    <Compile Include="../Jlib/Runtime/StateMachineBucketTelemetry.cs" Link="Source/StateMachineBucketTelemetry.cs" />
     <Compile Include="../Jlib/Runtime/SimulationFrameScheduler.cs" Link="Source/SimulationFrameScheduler.cs" />
+    <Compile Include="../Jlib/Runtime/MainThreadMethodTelemetry.cs" Link="Source/MainThreadMethodTelemetry.cs" />
+    <Compile Include="../Jlib/Runtime/ThreadCpuClock.cs" Link="Source/ThreadCpuClock.cs" />
+    <Compile Include="../Jlib/Runtime/PropertyTextureRevisionCache.cs" Link="Source/PropertyTextureRevisionCache.cs" />
+    <Compile Include="../Jlib/Runtime/NavigationLinkParallelism.cs" Link="Source/NavigationLinkParallelism.cs" />
+    <Compile Include="../Jlib/Runtime/NavigationGraphExpansion.cs" Link="Source/NavigationGraphExpansion.cs" />
+    <Compile Include="../Jlib/Runtime/AnimationBatchCullingCache.cs" Link="Source/AnimationBatchCullingCache.cs" />
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
   <ItemGroup>

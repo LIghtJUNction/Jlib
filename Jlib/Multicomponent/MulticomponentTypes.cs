@@ -75,6 +75,18 @@ namespace Jlib.Multicomponent {
     }
 
     /// <summary>
+    /// Opt-in revision for the normal Game.StepTheSim publication path. Equal
+    /// nonzero revisions guarantee identical published Grid.Mass and Grid.Element
+    /// values, including the cell above each liquid. Zero disables reuse. This
+    /// excludes palette, lighting, fog, and external flow textures. The provider
+    /// must invalidate on every grid-changing command and simulation step, and
+    /// reset to zero on shutdown. Consumers also key the game/texture lifetime.
+    /// </summary>
+    public interface IMulticomponentGridRevisionProvider {
+        ulong GridRevision { get; }
+    }
+
+    /// <summary>
     /// Optional bounded bulk read. Implementations copy publication data before
     /// returning; no native lease may remain held while the caller uses a batch.
     /// Existing single-cell providers do not need to implement this interface.

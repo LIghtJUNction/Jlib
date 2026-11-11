@@ -10,12 +10,26 @@ internal static partial class Program {
 
     private static int Main(string[] args) {
         try {
+            if (args.Contains("--navigation")) {
+                NavigationGraphExpansionCoverage.Run(args.Contains("--benchmark-navigation"));
+                NavigationLinkParallelismCoverage.Run(args.Contains("--benchmark-navigation"));
+                int managed = Array.IndexOf(args, "--game-managed");
+                if (managed >= 0) NavigationReferenceCoverage.Run(args[managed + 1]);
+                if (args.Contains("--contracts")) SourceContract.Run(Array.Empty<string>());
+                return 0;
+            }
             var loaded = Jlib.Runtime.JlibApi.DiscoverProviders(Jlib.Runtime.JlibApi.AbiVersion, Jlib.Runtime.JlibApi.Version);
             Equal(Jlib.Runtime.JlibCompatibilityStatus.Compatible, loaded.Status, "the test host sees one real JlibApi");
             Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
             OwnershipContract();
             WorkSelectionCoverage.Run();
             SimulationFrameSchedulerCoverage.Run();
+            StateMachineBucketTelemetryCoverage.Run();
+            MainThreadMethodTelemetryCoverage.Run();
+            PropertyTextureRevisionCacheCoverage.Run();
+            AnimationBatchCullingCacheCoverage.Run();
+            NavigationGraphExpansionCoverage.Run(false);
+            NavigationLinkParallelismCoverage.Run(false);
             ResourceContract();
             ModAssetsCoverage.Run();
             MulticomponentCoverage.Run();

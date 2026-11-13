@@ -13,16 +13,18 @@ namespace Jlib.Runtime {
     /// <summary>
     /// Keeps native module handles resident. Mono may cache P/Invoke entry points after mapping.
     /// </summary>
-    internal sealed class NativeModule {
+    public sealed class NativeModule {
         private readonly IntPtr handle;
 
         private NativeModule(IntPtr value) {
             handle = value;
         }
 
-        internal static NativeModule OpenAlreadyLoaded(string path) => Open(path, alreadyLoaded: true);
+        /// <summary>Borrow an already loaded module without loading a new copy.</summary>
+        public static NativeModule OpenAlreadyLoaded(string path) => Open(path, alreadyLoaded: true);
 
-        internal static NativeModule OpenTarget(string path) => Open(path, alreadyLoaded: false);
+        /// <summary>Load an absolute native file and keep its handle resident.</summary>
+        public static NativeModule OpenTarget(string path) => Open(path, alreadyLoaded: false);
 
         private static NativeModule Open(string path, bool alreadyLoaded) {
             if (!Path.IsPathRooted(path) || !File.Exists(path))
@@ -42,7 +44,8 @@ namespace Jlib.Runtime {
             return new NativeModule(module);
         }
 
-        internal IntPtr RequireSymbol(string name) {
+        /// <summary>Resolve an export or throw when the symbol is absent.</summary>
+        public IntPtr RequireSymbol(string name) {
             IntPtr symbol = NativePlatform.IsWindows ? GetProcAddress(handle, name) :
                 (NativePlatform.IsMac ? MacSymbol(handle, name) : LinuxSymbol(handle, name));
             if (symbol == IntPtr.Zero)
@@ -50,7 +53,8 @@ namespace Jlib.Runtime {
             return symbol;
         }
 
-        internal T Bind<T>(string name) where T : class =>
+        /// <summary>Bind an export to an unmanaged delegate type.</summary>
+        public T Bind<T>(string name) where T : class =>
             Marshal.GetDelegateForFunctionPointer(RequireSymbol(name), typeof(T)) as T;
 
         private static string Error() {

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 
 namespace Jlib.Runtime {
     /// <summary>Locates the Unity Mono runtime that hosts Oxygen Not Included.</summary>
-    internal static class NativePlatform {
+    public static class NativePlatform {
         internal static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         internal static bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         internal static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
@@ -26,7 +26,7 @@ namespace Jlib.Runtime {
         /// Resolves the MonoBleedingEdge embed runtime next to a managed game assembly
         /// such as Assembly-CSharp.dll.
         /// </summary>
-        internal static string MonoPath(string assemblyPath) {
+        public static string MonoPath(string assemblyPath) {
             RequireSupported();
             string data = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(assemblyPath)));
             if (string.IsNullOrEmpty(data))

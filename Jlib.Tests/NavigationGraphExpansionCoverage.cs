@@ -105,7 +105,7 @@ internal static class NavigationGraphExpansionCoverage
 
         private byte[] DirtyBitFlags;
         private List<int> DirtyCells = new List<int>();
-        private List<int> dirtyCellsSwapBuffer = new List<int>();
+        private static List<int> dirtyCellsSwapBuffer = new List<int>();
         private readonly int width, height;
         public readonly int updateRangeX, updateRangeY;
         internal List<int> Processed = new List<int>();

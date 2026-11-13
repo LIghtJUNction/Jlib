@@ -55,12 +55,12 @@ namespace Jlib.Runtime
         {
             var body = instructions.Select(instruction => new CodeInstruction(instruction)).ToList();
             var swap = AccessTools.Field(typeof(NavGrid), "dirtyCellsSwapBuffer");
-            int tail = body.FindIndex(instruction => instruction.opcode == OpCodes.Ldfld
-                && Equals(instruction.operand, swap)) - 1;
+            int tail = body.FindIndex(instruction => instruction.opcode == OpCodes.Ldsfld
+                && Equals(instruction.operand, swap));
             var add = AccessTools.Method(typeof(NavGrid), "AddDirtyCell", new[] { typeof(int) });
             bool expectedLoop = tail >= 0 && body.Take(tail).Count(instruction => Equals(instruction.operand, add)) == 1
                 && !body.Skip(tail).Any(instruction => Equals(instruction.operand, add));
-            if (!expectedLoop || tail < 0 || body[tail].opcode != OpCodes.Ldarg_0
+            if (!expectedLoop || swap == null || !swap.IsStatic
                 || body.Take(tail).Any(instruction => instruction.blocks.Count != 0))
                 throw new InvalidOperationException("Unsupported navigation expansion/buffer-swap layout");
             var entry = new CodeInstruction(OpCodes.Ldarg_0);

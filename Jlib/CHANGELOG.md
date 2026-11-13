@@ -1,3 +1,8 @@
+## 2026-11-13 — 0.3.8
+
+- 公开共享 NativeModule 加载、符号绑定和 MonoPath 接口，供 CycleTrim 复用，避免两份平台加载实现。
+- 保留原生模块驻留与绝对路径校验。
+
 ## 2026-11-10 — 0.3.5
 
 - Add a shared simulation scheduler for asynchronous native providers. Continue independent managed sub-ticks while native work runs; defer only handoffs whose completion signal is still busy.

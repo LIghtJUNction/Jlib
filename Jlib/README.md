@@ -17,11 +17,11 @@ not install the game mod. Jlib itself does not change colony gameplay.
 
 ## Consumer contract
 
-- Assembly: `Jlib`, version `0.3.9.0`; mod static ID: `LIghtJUNction.Jlib`.
+- Assembly: `Jlib`, version `0.3.10.0`; mod static ID: `LIghtJUNction.Jlib`.
 - `Jlib.Runtime.JlibApi.AbiVersion` is the public integer constant `1`.
   ABI must match exactly. New methods that existing callers can ignore stay on ABI 1;
   `Version` is how a consumer asks for those methods.
-- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.3.9`), and `PLibVersion` identify the provider.
+- `Jlib.Runtime.JlibApi.StaticId`, `Version` (`0.3.10`), and `PLibVersion` identify the provider.
 - `CheckCompatibility(requiredAbi, minimumVersion)` reports a `JlibCompatibility` result.
   `RequireCompatibility` throws `JlibCompatibilityException` when that result is not compatible.
 - `DiscoverProviders(requiredAbi, minimumVersion)` reflects over assemblies already loaded
@@ -41,15 +41,22 @@ not install the game mod. Jlib itself does not change colony gameplay.
   It inspects initializer IL without executing the initializer. Callers receive
   a target method or a diagnostic reason, and should skip the affected patch
   when resolution fails. Only callback bodies owned by the native type are accepted.
+- Multicomponent availability fields (minimum version `0.3.10`) distinguish
+  uncomputed pressure/volume from a known zero. Check snapshot `PressureAvailable`
+  and `LiquidVolumeFractionAvailable`, and species `PartialPressureAvailable`
+  and `VolumeFractionAvailable` before using those numeric fields. Mass and
+  temperature remain authoritative when derived quantities are unavailable.
+  The original constructors retain their existing all-values-known contract.
+  An unknown liquid fill leaves Vent's original decision in place.
 - Retained PLib component protocol: `4.25.0.0`.
-- NuGet package: `LIghtJUNction.Jlib` version `0.3.9`, targets `net48` and `netstandard2.1`.
+- NuGet package: `LIghtJUNction.Jlib` version `0.3.10`, targets `net48` and `netstandard2.1`.
 - `ReplaceNativeLibrary` / `ReplaceSimDll` redirect a Mono P/Invoke DLL name (for example
   `SimDLL`) for one loaded managed assembly's MonoImage to an absolute native library path.
   Call only in the Unity Mono game process before `Game.Instance` exists. The mapping cannot
   be undone without a restart. Official ABI checks of the replacement binary stay with the
   caller. Prefer `minimumVersion: "0.3.0"` when you need these methods.
 
-Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.3.9" ExcludeAssets="runtime"`
+Use `PackageReference Include="LIghtJUNction.Jlib" Version="0.3.10" ExcludeAssets="runtime"`
 or a project reference with `Private="false"`. Do not merge the shared assembly
 or include `Jlib.dll` / `PLib*.dll` in a consumer release. A consumer that has
 Jlib-dependent types must validate and load the enabled Jlib provider **before**

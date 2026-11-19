@@ -14,7 +14,7 @@ namespace Jlib.Runtime {
     public static class JlibApi {
         public const int AbiVersion = JlibContract.ExpectedAbi;
         public const string StaticId = JlibContract.ExpectedStaticId;
-        public const string Version = "0.3.9";
+        public const string Version = "0.3.10";
         public const string PLibVersion = JlibContract.ExpectedPLibVersion;
 
         /// <summary>

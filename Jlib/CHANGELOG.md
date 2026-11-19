@@ -1,3 +1,11 @@
+## 2026-11-20 — 0.3.10
+
+- Add explicit pressure and occupied-volume availability to multicomponent
+  snapshots while retaining the original constructors' known-value semantics.
+- Keep the original Vent decision when the provider has no liquid fill; omit
+  uncomputed partial pressure from composition hover text.
+- The shared ABI remains 1. Consumers using these fields require Jlib 0.3.10.
+
 ## 2026-11-13 — 0.3.8
 
 - 公开共享 NativeModule 加载、符号绑定和 MonoPath 接口，供 CycleTrim 复用，避免两份平台加载实现。

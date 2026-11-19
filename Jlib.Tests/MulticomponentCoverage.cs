@@ -10,6 +10,19 @@ internal static class MulticomponentCoverage {
             new MulticomponentSpecies(new Element { id = SimHashes.CarbonDioxide }, MulticomponentPhase.Gas, 2f, 300f, 0f, 0f)
         };
         var gasSnapshot = new MulticomponentCellSnapshot(gases, 3, 3f, 0f, 0f, 0f);
+        Program.Check(gasSnapshot.PressureAvailable && gasSnapshot.LiquidVolumeFractionAvailable,
+            "legacy snapshot constructor retains known derived-value semantics");
+        Program.Check(gases.All(item => item.PartialPressureAvailable && item.VolumeFractionAvailable),
+            "legacy species constructor retains known derived-value semantics");
+        var unknown = new MulticomponentCellSnapshot(gases, 3, 3f, 0f, 0f, 0f, false, false);
+        Program.Check(!unknown.PressureAvailable && !unknown.LiquidVolumeFractionAvailable,
+            "new snapshot overload can explicitly report uncomputed derived values");
+        var unknownSpecies = new MulticomponentSpecies(gases[0].Element, MulticomponentPhase.Gas,
+            .4f, 300f, 0f, 0f, false, false);
+        Program.Check(!unknownSpecies.PartialPressureAvailable && !unknownSpecies.VolumeFractionAvailable,
+            "new species overload keeps unknown quantities distinct from known zero");
+        Program.Equal(1f, BreathableGas.Mass(unknown),
+            "unknown pressure does not disable authoritative inventory consumers");
         Program.Equal(1f, BreathableGas.Mass(gasSnapshot), "polluted oxygen counts as breathable; CO2 does not");
         Array.Reverse(gases);
         Program.Equal(1f, BreathableGas.Mass(gasSnapshot), "primary species ordering cannot change breathability");

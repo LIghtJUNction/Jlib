@@ -405,8 +405,9 @@ namespace Jlib.Multicomponent {
 
             [HarmonyPrefix]
             private static bool Prefix(Vent __instance, int output_cell, ref bool __result) {
-                if (!MulticomponentCellAccess.TryGetCell(output_cell, out var snapshot))
-                    return true;
+                if (!MulticomponentCellAccess.TryGetCell(output_cell, out var snapshot)
+                    || !snapshot.LiquidVolumeFractionAvailable)
+                    return true; // Unknown fill must retain the game's vent decision.
 
                 bool closedOrEntombed = false;
                 if (StructureField != null && ClosedMethod != null) {
@@ -588,7 +589,7 @@ namespace Jlib.Multicomponent {
                 int pct = (int)Math.Round((item.Mass / snapshot.TotalMass) * 100f);
                 string massStr = GameUtil.GetFormattedMass(item.Mass);
                 builder.Append(massStr).Append(" (").Append(pct).Append("%)");
-                if (item.PartialPressureKPa > 0.01f) {
+                if (item.PartialPressureAvailable && item.PartialPressureKPa > 0.01f) {
                     builder.Append(" [").Append(item.PartialPressureKPa.ToString("0.0")).Append(" kPa]");
                 }
             }

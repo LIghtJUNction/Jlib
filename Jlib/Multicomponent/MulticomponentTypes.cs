@@ -15,7 +15,8 @@ namespace Jlib.Multicomponent {
 
     /// <summary>
     /// Read-only species data for one cell. Element is the game's canonical
-    /// Element instance; values use ONI's standard mass, temperature and pressure units.
+    /// Element instance. Mass and temperature are always available; consult the
+    /// availability fields before interpreting volume or pressure.
     /// </summary>
     public struct MulticomponentSpecies {
         public readonly Element Element;
@@ -24,15 +25,27 @@ namespace Jlib.Multicomponent {
         public readonly float Temperature;
         public readonly float VolumeFraction;
         public readonly float PartialPressureKPa;
+        /// <summary>Whether VolumeFraction is a computed occupied-cell fraction.</summary>
+        public readonly bool VolumeFractionAvailable;
+        /// <summary>Whether PartialPressureKPa is computed in kPa, rather than a placeholder.</summary>
+        public readonly bool PartialPressureAvailable;
+
+        // Existing providers already assert that all six supplied values are known.
+        public MulticomponentSpecies(Element element, MulticomponentPhase phase,
+            float mass, float temperature, float volumeFraction, float partialPressureKPa)
+            : this(element, phase, mass, temperature, volumeFraction, partialPressureKPa, true, true) { }
 
         public MulticomponentSpecies(Element element, MulticomponentPhase phase,
-            float mass, float temperature, float volumeFraction, float partialPressureKPa) {
+            float mass, float temperature, float volumeFraction, float partialPressureKPa,
+            bool volumeFractionAvailable, bool partialPressureAvailable) {
             Element = element;
             Phase = phase;
             Mass = mass;
             Temperature = temperature;
             VolumeFraction = volumeFraction;
             PartialPressureKPa = partialPressureKPa;
+            VolumeFractionAvailable = volumeFractionAvailable;
+            PartialPressureAvailable = partialPressureAvailable;
         }
     }
 
@@ -47,16 +60,29 @@ namespace Jlib.Multicomponent {
         public readonly float GasPressureKPa;
         public readonly float LiquidPressureKPa;
         public readonly float LiquidVolumeFraction;
+        /// <summary>Whether LiquidVolumeFraction is a computed occupied-cell fraction.</summary>
+        public readonly bool LiquidVolumeFractionAvailable;
+        /// <summary>Whether both GasPressureKPa and LiquidPressureKPa are computed in kPa.</summary>
+        public readonly bool PressureAvailable;
+
+        // Preserve the contract of providers using the original constructor.
+        public MulticomponentCellSnapshot(MulticomponentSpecies[] components,
+            int componentCount, float totalMass, float gasPressureKPa, float liquidPressureKPa,
+            float liquidVolumeFraction)
+            : this(components, componentCount, totalMass, gasPressureKPa, liquidPressureKPa,
+                liquidVolumeFraction, true, true) { }
 
         public MulticomponentCellSnapshot(MulticomponentSpecies[] components,
             int componentCount, float totalMass, float gasPressureKPa, float liquidPressureKPa,
-            float liquidVolumeFraction) {
+            float liquidVolumeFraction, bool liquidVolumeFractionAvailable, bool pressureAvailable) {
             Components = components;
             ComponentCount = componentCount;
             TotalMass = totalMass;
             GasPressureKPa = gasPressureKPa;
             LiquidPressureKPa = liquidPressureKPa;
             LiquidVolumeFraction = liquidVolumeFraction;
+            LiquidVolumeFractionAvailable = liquidVolumeFractionAvailable;
+            PressureAvailable = pressureAvailable;
         }
     }
 

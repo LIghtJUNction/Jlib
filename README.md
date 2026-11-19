@@ -1,104 +1,85 @@
 # Jlib
 
-Jlib 是《缺氧》（Oxygen Not Included）的共享前置库，基于
-[Peter Han 的 PLib](https://github.com/peterhaneve/ONIMods)，保留
-`PeterHan.PLib.*` 命名空间。多个 Mod 共用一份启用的 `Jlib.dll`。
+![Jlib 预览图](Jlib/preview.png)
 
-本仓库只包含 Jlib、它需要的 PLib 库模块、测试和打包配置。
+Jlib 是《缺氧》（Oxygen Not Included）的共享前置 Mod，基于 [Peter Han 的 PLib](https://github.com/peterhaneve/ONIMods)，保留 `PeterHan.PLib.*` 命名空间。依赖它的 Mod 共用一份启用的 `Jlib.dll`，由同一个提供者处理配置、界面、按键和公共运行时接口。
 
-Jlib 随 [OniMods](https://github.com/LIghtJUNction/OniMods) 一起发布。onim 是这个仓库里的工具，把缺氧 Mod 的开发、测试和创意工坊发布连成一条直线：`onim dev` 放进游戏里试，`onim build` 打包，`onim publish` 发到 Steam。
-
-## Jlib 与原版 PLib 的定位与差异
-
-[Peter Han 的 PLib](https://github.com/peterhaneve/ONIMods) 是《缺氧》Mod 社区极其优秀且广泛使用的先驱基础库，官方在 NuGet 上提供了标准包（[`PLib`](https://www.nuget.org/packages/PLib/)）。
-
-Jlib 继承并保留了 PLib 的完整公开 API 与 `PeterHan.PLib.*` 命名空间，两者最核心的差异在于**部署集成范式**以及针对现代工程流的特性补充：
-
-| 维度 | 原版 PLib (Peter Han) | Jlib (LIghtJUNction) |
-| :--- | :--- | :--- |
-| **集成范式** | **自包含内嵌模式（Merged / ILRepack）**<br>官方推荐在编译期将 PLib 合并进每个 Mod 的 DLL，玩家无需订阅额外前置，运行时通过版本路由机制协同 | **独立共享前置模式（Shared Prerequisite）**<br>作为创意工坊独立订阅的前置 Mod 运行，下游 Mod 通过 NuGet 引用但 `ExcludeAssets="runtime"`，显著减小 Mod 分发体积并由单一实例统一调度 |
-| **NuGet 分发** | 官方包 [`PLib`](https://www.nuget.org/packages/PLib/)（主要用于编译期打包与内联） | 官方包 [`LIghtJUNction.Jlib`](https://www.nuget.org/packages/LIghtJUNction.Jlib)（专为共享前置模式配置，支持多目标构建） |
-| **依赖感知面板** | 专注于内嵌组件路由 | 内置 `PUtil.DependentMods()`，在 Jlib 的 Mod 选项界面中动态扫描并展示当前游戏中正在共用 Jlib 的模组清单 |
-| **配置选项刷新** | `POptions.Initialize` 适合游戏启动期一次性注册 | 新增 `POptions.RefreshRegistered()`，支持在主初始化后动态加载的模块或延迟注册的选项实时热刷新 |
-| **所有权显式绑定** | 依赖调用栈反射（`Assembly.GetCallingAssembly`）解析 Mod 根目录 | 补充 `PUtil.RegisterModAssembly()` 与 `JlibApi.RegisterConsumer()`，支持在复杂调度或动态加载时显式指定程序集所有权 |
-| **多目标构建与测试** | 经典 .NET Framework 工程 | 现代 SDK-style 工程，支持 `net48` 与 `netstandard2.1`，并附带不依赖游戏客户端的独立宿主单元测试套件（`Jlib.Tests`） |
+当前源码版本为 **0.3.10**，程序集版本为 **0.3.10.0**，公共 ABI 仍为 **1**。本仓库只包含 Jlib、所需的 PLib 模块、测试及打包配置。Jlib 的作用是提供共享接口与兼容性校验；帧率收益需要在具体游戏场景测量。
 
 ## 玩家安装
 
-安装并启用 Jlib 前置 Mod，将它排在依赖它的 Mod 前面，然后重启游戏。
-本地安装时，将构建得到的 `artifacts/mod/Jlib/` 放入游戏用户目录的
-`mods/Local/`。同一 static ID 只启用一份提供者。
+1. 订阅并启用 [Jlib 前置 Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3835083839)。
+2. 在游戏 Mods 列表将它排在依赖它的 Mod 前面，重启游戏。
+3. 同一 static ID `LIghtJUNction.Jlib` 只启用一份提供者；本地副本和工坊副本不要同时启用。
 
-**NuGet 包是给开发者使用的引用，不能代替游戏中的 Jlib 前置 Mod。**
+Jlib 的选项界面可查看依赖它的 Mod。遇到版本不匹配时，应核对游戏实际加载的 Jlib，以及它的版本、ABI 和来源。
+
+**NuGet 包供开发时引用，游戏仍需安装并启用 Jlib 前置 Mod。** 工坊包、源码分支与 NuGet 的已发布版本可能不同，请分别核对。
+
+## 这一轮改进了什么
+
+| 改进 | 实际作用与边界 |
+| --- | --- |
+| 主线程派发有预算 | 一帧最多取 128 个回调，并在回调之间检查约 4 ms 的预算；不能中断单个耗时回调，整帧耗时还包括游戏与其他 Mod 的工作 |
+| U60 纹理回调适配 | 解析旧方法或受支持的新委托布局，不执行类型静态初始化；未知布局给出原因并跳过相应补丁 |
+| 多组分数据可用性 | 0.3.10 区分“已知为零”和“尚未计算”；调用者先检查压力、分压和体积分数的可用性 |
+| 消费者所有权与共享提供者检查 | 显式关联消费者程序集和 Mod，校验 ABI 与最低版本，减少配置归属和重复打包问题 |
+
+当前 OniSim 不提供已校准的压力与分压。Jlib 会保留这种“未知”状态；缺少液体占格数据时，相关 Vent 判断回到原版路径。质量和温度来自提供者，库存应从质量字段读取。
+
+本轮独立宿主通过 **2,379 个断言**，并完成 `net48`、`netstandard2.1` 构建与元数据检查。宿主不执行游戏 DLL；其他 Mod 组合、渲染路径及长时间游戏仍需分别验证。接口细节见[开发指南](Jlib/README.md)和[更新记录](Jlib/CHANGELOG.md)。
 
 ## Mod 开发引用
 
-NuGet 包：[LIghtJUNction.Jlib](https://www.nuget.org/packages/LIghtJUNction.Jlib)。
-当前分支的源码版本为 `0.3.7`；已发布版本以 NuGet 包页为准。
-需要 `ReplaceSimDll` / `ReplaceNativeLibrary` 时请要求最低版本 `0.3.0`。
-使用新增的 `IMulticomponentCellBatchProvider` 批量读取接口时，请要求最低版本
-`0.3.2`。它允许一次复制最多 128 个连续格子的发布数据，先释放原生读取锁，
-再供颜色计算使用；旧的单格提供者接口保持可用。
-下面使用源码版本作为引用示例：
+NuGet 包：[LIghtJUNction.Jlib](https://www.nuget.org/packages/LIghtJUNction.Jlib)。下面以源码版本举例；使用 NuGet 前先确认该版本已经发布，或引用本仓库源码构建。
 
 ```xml
-<PackageReference Include="LIghtJUNction.Jlib" Version="0.3.7" ExcludeAssets="runtime" />
+<PackageReference Include="LIghtJUNction.Jlib" Version="0.3.10" ExcludeAssets="runtime" />
 ```
 
-直接引用源码时，将 `ProjectReference` 的 `Private` 设为 `false`。
-不要把 `Jlib.dll` 或 `PLib*.dll` 合并、复制进消费者 Mod 的发行包。
-消费者必须在枚举依赖 Jlib 的实现类型之前，确认游戏实际加载的提供者及其 ABI。
+源码 `ProjectReference` 的 `Private` 应为 `false`。不要把 `Jlib.dll` 或 `PLib*.dll` 合并、复制进消费者的发行包。
 
-程序集名称为 `Jlib`，Mod static ID 为 `LIghtJUNction.Jlib`，PLib 组件协议为
-`4.25.0.0`。完整 API、版本兼容规则和消费者引导方式见
-[Jlib 开发指南](Jlib/README.md)。
+消费者必须在 ONI 枚举依赖 Jlib 的实现类型之前，验证并加载实际启用的提供者。请在枚举前的引导阶段执行检查，随后才进入实现的 `OnLoad`。实现程序集加载后，再用 `JlibApi.RegisterConsumer` 建立 Mod 所有权关系。
+
+| 使用的接口 | 最低 Jlib 版本 |
+| --- | --- |
+| `ReplaceSimDll` / `ReplaceNativeLibrary` | 0.3.0 |
+| `IMulticomponentCellBatchProvider`，一次至多 128 个连续格子 | 0.3.2 |
+| `PropertyTextureCallbackTarget.TryResolve` | 0.3.9 |
+| 压力与体积分数可用性字段 | 0.3.10 |
+
+原生库映射只能在受支持的 Unity Mono 进程、`Game.Instance` 创建前设置；映射变更需要重启，替代库的 ABI 校验由调用方负责。PLib 组件协议仍为 `4.25.0.0`。
 
 ## 从源码构建
 
-需要 .NET 10 SDK（测试工程使用 `net10.0`）和本机合法安装的《缺氧》。
-将 `OniManagedPath` 指向游戏的 `OxygenNotIncluded_Data/Managed` 目录：
+需要 .NET 10 SDK（测试工程使用 `net10.0`）和本机合法安装的《缺氧》。将 `OniManagedPath` 指向游戏的 `OxygenNotIncluded_Data/Managed`：
 
 ```sh
 dotnet build Jlib/Jlib.csproj -c Release -p:OniManagedPath="/path/to/OxygenNotIncluded_Data/Managed"
 dotnet pack Jlib/Jlib.csproj -c Release --no-build -p:OniManagedPath="/path/to/OxygenNotIncluded_Data/Managed"
 ```
 
-也可以通过环境变量 `ONI_MANAGED_PATH` 提供同一路径。
-仓库不保存游戏引用 DLL，构建和打包也不会分发这些 DLL。
+也可以设置 `ONI_MANAGED_PATH`。仓库不保存或分发游戏引用 DLL。目标为 `net48` 与 `netstandard2.1`，游戏前置使用 `net48`：
 
-构建目标为 `net48` 和 `netstandard2.1`。游戏前置 Mod 使用 `net48`，输出为：
+| 输出 | 用途 |
+| --- | --- |
+| `artifacts/Jlib.zip` | 游戏 Mod 压缩包 |
+| `artifacts/mod/Jlib/` | 可本地安装的 Mod |
+| `artifacts/nuget/*.nupkg` | 开发引用包 |
 
-```text
-artifacts/Jlib.zip          游戏 Mod 压缩包
-artifacts/mod/Jlib/         解压后的游戏 Mod
-artifacts/nuget/*.nupkg     开发引用包
-```
+Jlib 随 [OniMods](https://github.com/LIghtJUNction/OniMods) 集成；实际发布步骤与验证要求见该仓库的发布文档。
 
 ## 本地验证
 
 ```sh
 dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release
-# 构建后再检查两个目标程序集的元数据：
 dotnet run --project Jlib.Tests/Jlib.Tests.csproj -c Release -- --inspect Jlib/bin/Release/net48/Jlib.dll Jlib/bin/Release/netstandard2.1/Jlib.dll
 ```
 
-宿主测试不启动游戏，也不执行游戏 DLL。Unity/Mono、Harmony 补丁、存读档、UI 和
-实际加载顺序仍需在真实游戏会话中验证。
+第二条命令检查先前构建的程序集。Unity/Mono、Harmony 补丁、UI、存读档及实际加载顺序仍需在游戏中验证。
 
-## 目录
+## 来源与许可证
 
-| 路径 | 内容 |
-| --- | --- |
-| `Jlib/` | 共享库入口、公开 API、消费者打包规则和 Mod 元数据 |
-| `Jlib.Tests/` | 不依赖运行游戏的宿主测试 |
-| `PLibCore/` | Jlib 使用的核心库和翻译 |
-| `PLibActions/`、`PLibAVC/`、`PLibBuildings/` | 操作、版本检查和建筑 API |
-| `PLibDatabase/`、`PLibLighting/`、`PLibOptions/`、`PLibUI/` | 数据库、光照、配置和 UI API |
+继承的 PLib 代码保留 Peter Han 的 MIT 版权和许可；Jlib 新增代码同样使用 MIT。项目采用 AI 生成开发与迭代；继承的第三方代码及素材以原作者署名和许可证为准。
 
-这些 PLib 模块直接编译进 `Jlib.dll`，不是额外发行的 Mod。
-
-## 许可证与来源
-
-继承的 PLib 代码保留 Peter Han 的 MIT 版权和许可声明；Jlib 新增代码也使用 MIT。
-详情见 [LICENSE](LICENSE)、[第三方声明](Jlib/THIRD-PARTY-NOTICES.md) 和
-[上游来源声明](UPSTREAM.toml)。
+见 [LICENSE](LICENSE)、[第三方声明](Jlib/THIRD-PARTY-NOTICES.md)和[上游来源](UPSTREAM.toml)。反馈时请附游戏版本、实际加载的 Jlib 版本、依赖 Mod 列表与最小复现：[问题反馈](https://github.com/LIghtJUNction/Jlib/issues)。

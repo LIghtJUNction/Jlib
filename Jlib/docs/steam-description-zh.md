@@ -1,32 +1,47 @@
-欢迎来到 Jlib！《缺氧》下一代高性能共享前置库。
-[b]所有下游模组共用一份高性能、标准兼容的提供者，彻底告别重复打包与版本冲突！[/b]
-订阅一次排在依赖 Mod 前面。殖民地规则不动，Jlib 不改变游戏原生玩法，但为整个 Mod 生态提供坚实底座。
+[img]https://media.githubusercontent.com/media/LIghtJUNction/OniMods/main/.agents/skills/oni-workshop-description/assets/ai-generated-congratulations.png[/img]
+[h1]恭喜！[/h1]
+[b]这个 Mod 完全由 AI 生成！[/b]
+该声明指 Jlib 项目的 AI 开发方式。[b]继承的 Peter Han / PLib 代码及第三方素材属于原作者贡献，继续适用原作者署名与许可。[/b]
 
-[h2]当前阶段: v0.3.5[/h2]
-0.3.5 新增原生模拟完成信号驱动的时间步调度接口，让可继续的托管子步与原生计算重叠，避免画面主线程等待未完成的模拟。宿主测试与首次实机接入已验证；完整模拟吞吐量的提升仍需专项验收。
-[i]公开稳定 ABI: 1。保留的 PLib 组件协议: 4.25.0.0。[/i]
-[i]static ID LIghtJUNction.Jlib 只启用一份。[/i]
+[img]https://raw.githubusercontent.com/LIghtJUNction/Jlib/main/Jlib/preview.png[/img]
 
-[h3]✨ 核心功能全集枚举[/h3]
-* [b]PLibCore 核心工具[/b]：模组所有权绑定（[code]PUtil.DependentMods[/code]）、PDetours 快速反射委托、PPatchTools/PTranspilerTools 字节码辅助、PThreadLocalPool 线程对象池、PO 语言包加载与 TMP 字体补丁。
-* [b]PLibOptions 配置体系[/b]：游戏原生风格配置页（POptions），支持全类型控件（滑动条、颜色拾取、枚举单选、密码掩码等）、动态选项与运行时热刷新（[code]POptions.RefreshRegistered[/code]）。
-* [b]PLibUI 声明式 UI 引擎[/b]：轻量级 Unity UI 框架，内置 4 大布局引擎（BoxLayout/GridLayout/RelativeLayout/CardLayout）与可拖拽浮动弹窗。
-* [b]PLibActions / Buildings / Lighting / Database / AVC[/b]：自定义按键映射与安全分发、建筑管线注册、多边形光照、法典成就注入与多源自动版本检查。
-* [b]Jlib.Runtime 现代前置底座[/b]：严格 ABI 1 握手、零依赖引导合约（[code]JlibContract[/code]）、原生动态库 Mono P/Invoke 重定向（[code]ReplaceNativeLibrary[/code]/[code]ReplaceSimDll[/code]）为 OniSim 等 C++/Rust 引擎提供免重启注入、沙盒安全资源解析器（[code]ModResources[/code]）与游戏组件热替换。
+[h1]Jlib · 多个 Mod 共用的一份前置库[/h1]
+Jlib 为《缺氧》Mod 提供共享的配置、界面、按键和运行时接口。玩家安装一份，依赖它的 Mod 使用同一个 Jlib 提供者。
 
-[h3]🌟 独家：动态接口调用分析与 Harmony 补丁排序诊断器[/h3]
-* [b]零硬编码动态枚举[/b]：运行时反射自动扫描所有模块与公开 API，随 Mod 更新自动同步！
-* [b]接口调用次数统计[/b]：精准记录每个公开 API 的调用频次与最后触发时间。
-* [b]调用来源 Mod 溯源[/b]：自动回溯调用栈，直接提取调用者 Mod 名称与 staticID！
-* [b]补丁覆盖全景流水线[/b]：按 Prefix -> Transpiler -> Postfix 完整展示执行覆盖顺序与优先级。
-* [b]可拖动交互重排覆盖顺序[/b]：配置页一键唤出悬浮窗口，点击 [b][▲ 提前][/b] 或 [b][▼ 延后][/b] 实时重排优先级并即刻生效，无需重启游戏现场化解 Mod 冲突！
-* [b]支持 Debug 诊断[/b]：一键开启详细日志追踪并支持导出完整快照至 [code]Player.log[/code]！
+[b]本页对应源码版本 0.3.10；公共 ABI 为 1。[/b] 实际下载包请在游戏 Mod 菜单核对。Jlib 提供共享接口与兼容性校验；帧率收益需在具体游戏场景测量。
 
-[h3]开发者指南 (MODDING API)[/h3]
-NuGet: [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]LIghtJUNction.Jlib[/url] (net48/netstandard2.1)。设置 [code]ExcludeAssets="runtime"[/code]，严禁将 Jlib.dll 打包进消费者发行包。在枚举类型前调用 [code]JlibApi.RegisterConsumer[/code]。
+[h2]怎样安装[/h2]
+[list]
+[*]订阅并在 Mods 菜单启用 Jlib。
+[*]把它排在依赖它的 Mod 前面，然后重启游戏。
+[*]同一 static ID 只启用一份提供者，不要同时启用本地与工坊副本。
+[*]在 Jlib 选项界面查看依赖它的 Mod；版本报错时核对实际加载的 DLL。
+[/list]
+NuGet 包供开发者引用，玩家仍需安装游戏里的前置 Mod。工坊、源码和 NuGet 版本可能不同。
 
-[h3]谁需要它[/h3]
-[url=https://steamcommunity.com/sharedfiles/filedetails/?id=3807166922]ONI MCP Server[/url] 与 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3807166689]CycleTrim[/url] 均依赖本模组。
+[h2]0.3.10 这一轮解决什么[/h2]
+[list]
+[*]多组分数据明确区分“零”和“未知”。压力、分压、体积分数各有可用性字段；消费者按可用性标记读取这些字段。
+[*]液体占格数据不可用时，相关 Vent 判断回到原版路径。当前 OniSim 压力与分压仍标为不可用。
+[*]支持受审查的 U60 纹理回调布局；通过读取 IL 定位目标，不触发类型静态初始化。未知布局仅跳过对应补丁并给出诊断。
+[*]主线程派发一帧至多取 128 个回调，在回调之间检查约 4 ms 的预算；单个回调仍可能超时。整帧耗时仍需实测。
+[/list]
 
-[h3]开源贡献[/h3]
-源码与反馈：[url=https://github.com/LIghtJUNction/OniMods]GitHub 仓库[/url] 与 [url=https://github.com/LIghtJUNction/OniMods/issues]Issues[/url]。
+[h2]验证到哪里[/h2]
+本轮独立宿主通过 2,379 个断言，net48 与 netstandard2.1 构建及元数据检查通过。宿主不运行游戏 DLL；真实游戏、其他 Mod 组合和长期存读档仍需分别验收。
+
+[h2]给 Mod 作者[/h2]
+保留 PeterHan.PLib.* 命名空间与 PLib 4.25.0.0 组件协议。引用共享提供者时不要把 Jlib.dll / PLib*.dll 再打进发行包；必须在游戏枚举实现类型前检查已加载提供者的 ABI 和最低版本。
+
+0.3.10 可用性字段需要最低 Jlib 0.3.10。原生库映射仅限受支持的 Unity Mono、Game.Instance 创建之前，变更需要重启；请在重启后的初始化阶段设置映射。NuGet 最新已发布版本请以包页为准。
+
+[url=https://github.com/LIghtJUNction/Jlib/blob/main/Jlib/README.md]完整消费者接口与构建文档[/url] · [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]NuGet 开发引用[/url]
+
+[h2]开发流程示意[/h2]
+手绘图说明工具链分工；测量结果另见验证记录。
+[img]https://raw.githubusercontent.com/LIghtJUNction/OniMods/main/.agents/skills/oni-workshop-description/assets/onim-illustrated-jlib.gif[/img]
+
+[h2]来源与反馈[/h2]
+基于 [url=https://github.com/peterhaneve/ONIMods]Peter Han 的 PLib[/url]，保留其 MIT 版权和许可。Jlib 新增代码亦使用 MIT。
+[url=https://github.com/LIghtJUNction/Jlib]源码[/url] · [url=https://github.com/LIghtJUNction/Jlib/issues]问题反馈[/url] · [url=https://github.com/LIghtJUNction/Jlib/blob/main/Jlib/THIRD-PARTY-NOTICES.md]第三方声明[/url]
+反馈请提供游戏与 Jlib 版本、依赖 Mod 列表和最小复现；移除私人账号信息。

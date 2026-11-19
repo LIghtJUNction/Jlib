@@ -1,10 +1,12 @@
 # Jlib
 
+![Jlib preview](preview.png)
+
 Jlib is a standalone shared library mod for **Oxygen Not Included**, forked from
 [Peter Han's PLib](https://github.com/peterhaneve/ONIMods). It keeps the
 `PeterHan.PLib.*` source API while supplying one `Jlib.dll` to its consumers.
 
-Jlib ships with [OniMods](https://github.com/LIghtJUNction/OniMods). onim is the toolchain in that repo. It takes an Oxygen Not Included mod straight through development, testing, and Workshop publishing: `onim dev` tries it in game, `onim build` packs it, and `onim publish` sends it to Steam.
+Jlib is integrated with [OniMods](https://github.com/LIghtJUNction/OniMods). This document describes the **0.3.10 source contract**; the published Workshop and NuGet versions may differ. See that repository for the release workflow and its verification requirements.
 
 ## Install / 安装
 
@@ -14,6 +16,12 @@ not install the game mod. Jlib itself does not change colony gameplay.
 
 订阅并启用 Jlib，将它排在依赖它的 Mod 前面，然后重启游戏。多个 Mod 共用一份
 `Jlib.dll`。NuGet 包是开发引用，不能代替游戏中的前置 Mod。
+
+## Current validation scope
+
+This iteration passed **2,379 assertions** in the standalone host, with builds and metadata checks for `net48` and `netstandard2.1`. The host does not execute game DLLs. Game UI, rendering, load order and combinations of third-party mods still require runtime checks. These results do not establish an FPS improvement.
+
+Version 0.3.10 makes unknown multicomponent pressure and volume explicit. Check availability before reading derived quantities. Current OniSim pressure and partial pressure are unavailable; missing liquid occupancy leaves the affected Vent decision on the original game path. The existing constructors retain their all-values-known contract.
 
 ## Consumer contract
 
@@ -49,7 +57,7 @@ not install the game mod. Jlib itself does not change colony gameplay.
   The original constructors retain their existing all-values-known contract.
   An unknown liquid fill leaves Vent's original decision in place.
 - Retained PLib component protocol: `4.25.0.0`.
-- NuGet package: `LIghtJUNction.Jlib` version `0.3.10`, targets `net48` and `netstandard2.1`.
+- Package built from this source: `LIghtJUNction.Jlib` version `0.3.10`, targeting `net48` and `netstandard2.1`. This does not assert that this version is already published to NuGet.
 - `ReplaceNativeLibrary` / `ReplaceSimDll` redirect a Mono P/Invoke DLL name (for example
   `SimDLL`) for one loaded managed assembly's MonoImage to an absolute native library path.
   Call only in the Unity Mono game process before `Game.Instance` exists. The mapping cannot

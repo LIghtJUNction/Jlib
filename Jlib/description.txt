@@ -1,22 +1,47 @@
-[h1]Jlib — 高性能共享前置库[/h1]
-Jlib 是从 Peter Han 的 PLib 4.25 深度演进的下一代《缺氧》共享库，为下游 Mod 提供标准化前置。
+[img]https://media.githubusercontent.com/media/LIghtJUNction/OniMods/main/.agents/skills/oni-workshop-description/assets/ai-generated-congratulations.png[/img]
+[h1]恭喜！[/h1]
+[b]这个 Mod 完全由 AI 生成！[/b]
+该声明指 Jlib 项目的 AI 开发方式。[b]继承的 Peter Han / PLib 代码及第三方素材属于原作者贡献，继续适用原作者署名与许可。[/b]
 
-[b]核心功能全集[/b]
-* PLibCore：反射增强 (PDetours 快速委托)、补丁管理 (PPatchTools / PPatchManager / PTranspilerTools)、线程对象池 (PThreadLocalPool)、PO 翻译 (PLibLocalization)、TMP 字体补丁与跨 Mod 注册表 (PRegistry)。
-* PLibOptions：全功能 Mod 配置选项界面 (POptions)，支持全类型控件、分类折叠、重启提醒与动态热刷新。
-* PLibUI：声明式轻量级 Unity UI 引擎，包含全套标准控件、4 大自适应布局系统与可拖拽浮动弹窗。
-* PLibActions / Buildings / Lighting / Database / AVC：自定义按键映射、建筑注册与管线端口、多边形光照、法典成就注入与自动更新检查。
-* Jlib.Runtime：严格 ABI 1 握手、零依赖引导合约 (JlibContract)、原生库 Mono P/Invoke 动态重定向 (ReplaceNativeLibrary / ReplaceSimDll)、沙盒化资源读取 (ModResources) 与游戏组件热替换。
+[img]https://raw.githubusercontent.com/LIghtJUNction/Jlib/main/Jlib/preview.png[/img]
 
-[b]独家特性：动态接口统计与 Harmony 补丁排序诊断器[/b]
-* 动态无硬编码枚举：运行时反射实时扫描所有模块与公开 API，随 Mod 更新自动同步。
-* 统计接口调用次数与来源 Mod：精准记录各接口调用量，自动回溯堆栈定位发起调用的下游 Mod。
-* 补丁覆盖流水线全景：清晰列出所有受挂钩方法的 Prefix、Transpiler 与 Postfix 覆盖链路。
-* 拖拽与交互排序：在配置界面中唤出浮动面板，点击 [▲ 提前] 或 [▼ 延后] 即可实时重排补丁优先级，即刻化解 Mod 冲突！
-* 全功能 Debug：一键开启详细日志追踪并支持导出完整快照至 Player.log。
+[h1]Jlib · 多个 Mod 共用的一份前置库[/h1]
+Jlib 为《缺氧》Mod 提供共享的配置、界面、按键和运行时接口。玩家安装一份，依赖它的 Mod 使用同一个 Jlib 提供者。
 
-[b]使用与开发[/b]
-* 玩家：订阅并在 Mod 列表排在依赖它的 Mod（如 CycleTrim、OniMcp）上方，重启游戏。
-* 开发者：NuGet 包 LIghtJUNction.Jlib (net48 / netstandard2.1)，ExcludeAssets="runtime"，禁止打包 Jlib.dll。
+[b]本页对应源码版本 0.3.10；公共 ABI 为 1。[/b] 实际下载包请在游戏 Mod 菜单核对。Jlib 提供共享接口与兼容性校验；帧率收益需在具体游戏场景测量。
 
-来源与授权：MIT License | 源码: https://github.com/LIghtJUNction/OniMods
+[h2]怎样安装[/h2]
+[list]
+[*]订阅并在 Mods 菜单启用 Jlib。
+[*]把它排在依赖它的 Mod 前面，然后重启游戏。
+[*]同一 static ID 只启用一份提供者，不要同时启用本地与工坊副本。
+[*]在 Jlib 选项界面查看依赖它的 Mod；版本报错时核对实际加载的 DLL。
+[/list]
+NuGet 包供开发者引用，玩家仍需安装游戏里的前置 Mod。工坊、源码和 NuGet 版本可能不同。
+
+[h2]0.3.10 这一轮解决什么[/h2]
+[list]
+[*]多组分数据明确区分“零”和“未知”。压力、分压、体积分数各有可用性字段；消费者按可用性标记读取这些字段。
+[*]液体占格数据不可用时，相关 Vent 判断回到原版路径。当前 OniSim 压力与分压仍标为不可用。
+[*]支持受审查的 U60 纹理回调布局；通过读取 IL 定位目标，不触发类型静态初始化。未知布局仅跳过对应补丁并给出诊断。
+[*]主线程派发一帧至多取 128 个回调，在回调之间检查约 4 ms 的预算；单个回调仍可能超时。整帧耗时仍需实测。
+[/list]
+
+[h2]验证到哪里[/h2]
+本轮独立宿主通过 2,379 个断言，net48 与 netstandard2.1 构建及元数据检查通过。宿主不运行游戏 DLL；真实游戏、其他 Mod 组合和长期存读档仍需分别验收。
+
+[h2]给 Mod 作者[/h2]
+保留 PeterHan.PLib.* 命名空间与 PLib 4.25.0.0 组件协议。引用共享提供者时不要把 Jlib.dll / PLib*.dll 再打进发行包；必须在游戏枚举实现类型前检查已加载提供者的 ABI 和最低版本。
+
+0.3.10 可用性字段需要最低 Jlib 0.3.10。原生库映射仅限受支持的 Unity Mono、Game.Instance 创建之前，变更需要重启；请在重启后的初始化阶段设置映射。NuGet 最新已发布版本请以包页为准。
+
+[url=https://github.com/LIghtJUNction/Jlib/blob/main/Jlib/README.md]完整消费者接口与构建文档[/url] · [url=https://www.nuget.org/packages/LIghtJUNction.Jlib]NuGet 开发引用[/url]
+
+[h2]开发流程示意[/h2]
+手绘图说明工具链分工；测量结果另见验证记录。
+[img]https://raw.githubusercontent.com/LIghtJUNction/OniMods/main/.agents/skills/oni-workshop-description/assets/onim-illustrated-jlib.gif[/img]
+
+[h2]来源与反馈[/h2]
+基于 [url=https://github.com/peterhaneve/ONIMods]Peter Han 的 PLib[/url]，保留其 MIT 版权和许可。Jlib 新增代码亦使用 MIT。
+[url=https://github.com/LIghtJUNction/Jlib]源码[/url] · [url=https://github.com/LIghtJUNction/Jlib/issues]问题反馈[/url] · [url=https://github.com/LIghtJUNction/Jlib/blob/main/Jlib/THIRD-PARTY-NOTICES.md]第三方声明[/url]
+反馈请提供游戏与 Jlib 版本、依赖 Mod 列表和最小复现；移除私人账号信息。

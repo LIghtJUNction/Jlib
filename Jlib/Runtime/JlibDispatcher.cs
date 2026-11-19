@@ -4,8 +4,6 @@
  * The full permission and warranty notice is in the repository LICENSE.
  */
 
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,7 +17,7 @@ namespace Jlib.Runtime {
     /// Swaps queued batches under a short lock, then runs actions outside the lock.
     /// </summary>
     public sealed class JlibDispatcher : MonoBehaviour {
-        private static JlibDispatcher _instance;
+        private static JlibDispatcher _instance = null;
         private static int _mainThreadId;
         private const int MaxActionsPerFrame = 128;
         private static readonly long FrameBudgetTicks = Math.Max(1, Stopwatch.Frequency / 250);
@@ -31,8 +29,8 @@ namespace Jlib.Runtime {
         private readonly Queue<System.Action> _queueB = new Queue<System.Action>();
         private readonly object _queueLock = new object();
         private readonly HashSet<System.Action> _pendingCancellations = new HashSet<System.Action>();
-        private Queue<System.Action> _enqueueQueue;
-        private Queue<System.Action> _dequeueQueue;
+        private Queue<System.Action> _enqueueQueue = null;
+        private Queue<System.Action> _dequeueQueue = null;
         private bool _destroyed;
 
         /// <summary>Queued callbacks awaiting a Unity update; excludes the callback currently executing.</summary>
@@ -192,8 +190,8 @@ namespace Jlib.Runtime {
             private bool _started;
             private bool _completed;
             private bool _cancelled;
-            private T _result;
-            private ExceptionDispatchInfo _error;
+            private T _result = default;
+            private ExceptionDispatchInfo _error = null;
 
             internal DispatcherInvocation(Func<T> action) {
                 _action = action ?? throw new ArgumentNullException(nameof(action));

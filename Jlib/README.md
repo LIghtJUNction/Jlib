@@ -107,6 +107,23 @@ without changing the shared color calculation or the original provider API.
 Consumers that reference the new types must require Jlib **0.3.2** before their
 implementation assemblies are loaded. ABI remains `1` for existing consumers.
 
+## Main-thread dispatch
+
+`JlibDispatcher.Enqueue` runs immediately when called on the Unity main thread.
+`EnqueueDeferred` always queues work for a later update. Background callers can
+use `Invoke<T>` to wait for a result or receive the original callback exception.
+
+Each update processes at most 128 queued callbacks and yields between callbacks
+once 4 ms has elapsed. Unfinished work retains FIFO order across frames; work
+queued during a batch runs in a later batch. A single callback runs to completion,
+so callers should keep callbacks short and perform independent work off-thread.
+`JlibDispatcher.Instance.PendingCount` reports callbacks still waiting in the queue.
+
+A timeout before execution cancels the queued callback. A timeout after execution
+starts reports that the callback may still complete; retrying a state-changing
+operation requires checking its result first. Destroying the dispatcher clears
+queued work and wakes callers waiting for a result, including infinite waits.
+
 ## Managed Unity assets (source version)
 
 `Jlib.Runtime.ModAssets` uses the same explicit consumer assembly and Mod-relative

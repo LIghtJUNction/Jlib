@@ -5,7 +5,29 @@ using System.Collections;
 namespace UnityEngine {
     public class Object {
         internal int DestroyCount { get; private set; }
-        public static void Destroy(Object value) => value.DestroyCount++;
+        public static void Destroy(Object value) {
+            value.DestroyCount++;
+            if (value is MonoBehaviour component)
+                component.GetType().GetMethod("OnDestroy", System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic)?.Invoke(component, null);
+        }
+        public static void DontDestroyOnLoad(Object value) { }
+    }
+
+    // Only lifecycle dispatch is modeled here; no Unity frame loop executes.
+    public class MonoBehaviour : Object {
+        public GameObject gameObject { get; internal set; } = null!;
+        public void StartCoroutine(IEnumerator routine) => throw new NotSupportedException();
+    }
+
+    public sealed class GameObject : Object {
+        public GameObject(string name) { }
+        public T AddComponent<T>() where T : MonoBehaviour, new() {
+            var component = new T { gameObject = this };
+            typeof(T).GetMethod("Awake", System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic)?.Invoke(component, null);
+            return component;
+        }
     }
 
     public sealed class Texture2D : Object {
@@ -84,14 +106,6 @@ namespace UnityEngine.Networking {
 
     public static class DownloadHandlerAudioClip {
         public static AudioClip GetContent(UnityWebRequest request) => throw new NotSupportedException();
-    }
-}
-
-namespace Jlib.Runtime {
-    public sealed class JlibDispatcher {
-        public static JlibDispatcher Instance { get; } = new();
-        public static void RequireMainThread(string operationName) { }
-        public void StartCoroutine(IEnumerator routine) => throw new NotSupportedException();
     }
 }
 

@@ -21,6 +21,7 @@ internal static partial class Program {
             var loaded = Jlib.Runtime.JlibApi.DiscoverProviders(Jlib.Runtime.JlibApi.AbiVersion, Jlib.Runtime.JlibApi.Version);
             Equal(Jlib.Runtime.JlibCompatibilityStatus.Compatible, loaded.Status, "the test host sees one real JlibApi");
             Equal(1, loaded.ProviderCount, "one provider before fixture assemblies exist");
+            DispatcherCoverage.Run();
             OwnershipContract();
             WorkSelectionCoverage.Run();
             SimulationFrameSchedulerCoverage.Run();

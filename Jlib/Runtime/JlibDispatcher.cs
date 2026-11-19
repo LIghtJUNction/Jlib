@@ -4,6 +4,8 @@
  * The full permission and warranty notice is in the repository LICENSE.
  */
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +21,8 @@ namespace Jlib.Runtime {
     public sealed class JlibDispatcher : MonoBehaviour {
         private static JlibDispatcher _instance;
         private static int _mainThreadId;
+        private const int MaxActionsPerFrame = 128;
+        private static readonly long FrameBudgetTicks = Math.Max(1, Stopwatch.Frequency / 250);
 
         public static JlibDispatcher Instance => Volatile.Read(ref _instance);
         public static bool IsMainThread => _mainThreadId != 0 && Thread.CurrentThread.ManagedThreadId == _mainThreadId;
@@ -30,6 +34,14 @@ namespace Jlib.Runtime {
         private Queue<System.Action> _enqueueQueue;
         private Queue<System.Action> _dequeueQueue;
         private bool _destroyed;
+
+        /// <summary>Queued callbacks awaiting a Unity update; excludes the callback currently executing.</summary>
+        public int PendingCount {
+            get {
+                lock (_queueLock)
+                    return _queueA.Count + _queueB.Count;
+            }
+        }
 
         private void Awake() {
             if (Instance != null && Instance != this) {
@@ -45,21 +57,38 @@ namespace Jlib.Runtime {
 
         private void Update() {
             lock (_queueLock) {
-                if (_enqueueQueue.Count == 0)
+                if (_destroyed)
                     return;
-
-                var next = _enqueueQueue;
-                _enqueueQueue = _dequeueQueue;
-                _dequeueQueue = next;
+                // Finish a partially drained batch before newer work. Deferred
+                // callbacks queued while draining stay in the next batch.
+                if (_dequeueQueue.Count == 0) {
+                    if (_enqueueQueue.Count == 0)
+                        return;
+                    var next = _enqueueQueue;
+                    _enqueueQueue = _dequeueQueue;
+                    _dequeueQueue = next;
+                }
             }
 
-            while (_dequeueQueue.Count > 0) {
-                var action = _dequeueQueue.Dequeue();
+            long started = Stopwatch.GetTimestamp();
+            int processed = 0;
+            while (true) {
+                System.Action action;
+                lock (_queueLock) {
+                    if (_dequeueQueue.Count == 0)
+                        break;
+                    action = _dequeueQueue.Dequeue();
+                }
                 try {
                     action();
                 } catch (Exception ex) {
                     UnityEngine.Debug.LogError("[Jlib] Dispatcher uncaught action error: " + ex);
                 }
+                // One callback cannot be preempted. Yield between callbacks so
+                // a burst of MCP requests does not consume an entire render frame.
+                if (++processed >= MaxActionsPerFrame ||
+                        Stopwatch.GetTimestamp() - started >= FrameBudgetTicks)
+                    break;
             }
         }
 
@@ -219,7 +248,9 @@ namespace Jlib.Runtime {
                             : (int)Math.Max(0L, timeoutMs - elapsed.ElapsedMilliseconds);
                         if (remaining == 0 || !Monitor.Wait(_gate, remaining)) {
                             _cancelled = !_started;
-                            throw new TimeoutException("Timed out waiting for Unity main thread dispatch.");
+                            throw new TimeoutException(_started
+                                ? "Unity main thread dispatch timed out after starting; the callback may still complete."
+                                : "Unity main thread dispatch timed out in the queue; the callback was cancelled.");
                         }
                     }
                     _error?.Throw();

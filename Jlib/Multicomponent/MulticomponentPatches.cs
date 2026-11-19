@@ -51,8 +51,27 @@ namespace Jlib.Multicomponent {
     /// <summary>
     /// Mass-weighted gas and liquid color blending for multicomponent cells.
     /// </summary>
-    [HarmonyPatch(typeof(PropertyTextures), "UpdateGasColour")]
+    [HarmonyPatch]
     public static class MulticomponentVisualPatch {
+        private static MethodInfo target;
+        private static bool unavailableReported;
+
+        [HarmonyPrepare]
+        private static bool Prepare() {
+            string reason;
+            if (Runtime.PropertyTextureCallbackTarget.TryResolve(typeof(PropertyTextures), "UpdateGasColour",
+                    typeof(TextureRegion), out target, out reason))
+                return true;
+            if (!unavailableReported) {
+                unavailableReported = true;
+                Debug.LogWarning("[Jlib] Multicomponent gas colour blending disabled: " + reason +
+                    ". The native or third-party colour callback remains unchanged.");
+            }
+            return false;
+        }
+
+        [HarmonyTargetMethod]
+        private static MethodBase TargetMethod() { return target; }
         public static void ComputeBlendedGasColor(
             MulticomponentCellSnapshot snapshot,
             bool cellAboveValid,
@@ -148,9 +167,11 @@ namespace Jlib.Multicomponent {
         }
 
         [HarmonyPrefix]
-        private static bool Prefix(TextureRegion region, int x0, int y0, int x1, int y1) {
+        private static bool Prefix(TextureRegion __0, int __1, int __2, int __3, int __4) {
             if (!MulticomponentCellAccess.IsReady)
                 return true;
+            TextureRegion region = __0;
+            int x0 = __1, y0 = __2, x1 = __3, y1 = __4;
 
             ulong revision = MulticomponentCellAccess.ContentRevision;
             var cache = revision == 0 ? null : GetColorCache(Grid.CellCount);

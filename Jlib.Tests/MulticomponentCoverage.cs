@@ -3,6 +3,7 @@ using UnityEngine;
 
 internal static class MulticomponentCoverage {
     internal static void Run() {
+        PropertyTextureCallbackCoverage.Run();
         var gases = new[] {
             new MulticomponentSpecies(new Element { id = SimHashes.Oxygen }, MulticomponentPhase.Gas, .4f, 300f, 0f, 0f),
             new MulticomponentSpecies(new Element { id = SimHashes.ContaminatedOxygen }, MulticomponentPhase.Gas, .6f, 300f, 0f, 0f),

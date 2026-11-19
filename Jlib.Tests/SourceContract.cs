@@ -27,6 +27,9 @@ internal static class SourceContract {
                 if (count == 0)
                     throw new ArgumentException("Usage: --inspect <Jlib.dll> [more.dll]");
                 sawInspect = true;
+            } else if (args[i] == "--property-texture-managed") {
+                if (i + 1 >= args.Length) throw new ArgumentException("--property-texture-managed <Managed directory>");
+                PropertyTextureReferenceCoverage.Run(args[++i]);
             } else if (args[i] == "--inspect-package") {
                 if (i + 1 >= args.Length)
                     throw new ArgumentException("Usage: --inspect-package <Jlib.zip>");

@@ -18,6 +18,7 @@
     <Compile Include="../Jlib/Runtime/SimulationFrameScheduler.cs" Link="Source/SimulationFrameScheduler.cs" />
     <Compile Include="../Jlib/Runtime/MainThreadMethodTelemetry.cs" Link="Source/MainThreadMethodTelemetry.cs" />
     <Compile Include="../Jlib/Runtime/ThreadCpuClock.cs" Link="Source/ThreadCpuClock.cs" />
+    <Compile Include="../Jlib/Runtime/PropertyTextureCallbackTarget.cs" Link="Source/PropertyTextureCallbackTarget.cs" />
     <Compile Include="../Jlib/Runtime/PropertyTextureRevisionCache.cs" Link="Source/PropertyTextureRevisionCache.cs" />
     <Compile Include="../Jlib/Runtime/NavigationLinkParallelism.cs" Link="Source/NavigationLinkParallelism.cs" />
     <Compile Include="../Jlib/Runtime/NavigationGraphExpansion.cs" Link="Source/NavigationGraphExpansion.cs" />

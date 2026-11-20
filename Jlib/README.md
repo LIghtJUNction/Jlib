@@ -253,7 +253,12 @@ tool. When this project is checked out at `OniMods/libs/Jlib`, it detects the
 parent's `onim.toml` and Mod project and mirrors to the parent's `dist/` for `onim`.
 
 `preview.png`, when supplied next to this README, is copied into the Mod package.
-Use an original 512×512 PNG; no upstream preview image is bundled automatically.
+Use an original square PNG with positive dimensions. The packaging contract checks
+the complete PNG signature and IHDR header with its 13-byte data length. The file
+must be nonempty and at most 10 MiB, matching this project's Legacy publisher gate;
+this is a project validation rule, not a guarantee of Steam acceptance. The header
+check does not decode pixels or validate every PNG chunk. No upstream preview
+image is bundled automatically.
 The two `description` files contain Steam Workshop descriptions.
 
 Game-free contract checks, including the ownership helper and the packaging rules

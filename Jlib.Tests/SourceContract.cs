@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO.Compression;
 
 internal static class SourceContract {
@@ -14,6 +15,7 @@ internal static class SourceContract {
 
     internal static void Run(string[] args) {
         var root = RepoRoot();
+        PreviewPngContractCoverage();
         PackagingSources(root);
         Documents(root);
         var sawInspect = false;
@@ -87,12 +89,90 @@ internal static class SourceContract {
         Program.Check(notices.Contains(hash, StringComparison.Ordinal), "notices cite the upstream revision");
         Program.Check(notices.Contains("MIT", StringComparison.Ordinal), "notices keep the MIT statement");
 
-        var png = File.ReadAllBytes(Path.Combine(root, "Jlib", "preview.png"));
-        Program.Check(png.Length > 8 && png[0] == 0x89 && png[1] == 0x50 && png[2] == 0x4E && png[3] == 0x47, "preview is a PNG");
-        int width = ReadBigEndian(png, 16);
-        int height = ReadBigEndian(png, 20);
-        Program.Equal(512, width, "preview width");
-        Program.Equal(512, height, "preview height");
+        using var png = File.OpenRead(Path.Combine(root, "Jlib", "preview.png"));
+        var header = new byte[PngHeaderBytes];
+        int headerLength = png.ReadAtLeast(header, PngHeaderBytes, throwOnEndOfStream: false);
+        ValidatePreviewPngHeader(header.AsSpan(0, headerLength), png.Length);
+        Program.Check(true, "preview meets the square PNG header and project byte-limit contract");
+    }
+
+
+    // This is the repository's Legacy publisher limit, not a universal Steam limit.
+    private const long MaxPreviewBytes = 10 * 1024 * 1024;
+    private const int PngHeaderBytes = 33;
+
+    private static void ValidatePreviewPngHeader(ReadOnlySpan<byte> header, long fileLength) {
+        if (fileLength <= 0 || fileLength > MaxPreviewBytes)
+            throw new InvalidDataException("Preview must be nonempty and at most 10 MiB.");
+        if (header.Length < PngHeaderBytes || fileLength < PngHeaderBytes)
+            throw new InvalidDataException("Preview has a truncated PNG signature or IHDR chunk.");
+        ReadOnlySpan<byte> signature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        if (!header[..8].SequenceEqual(signature))
+            throw new InvalidDataException("Preview must have the complete PNG signature.");
+        if (BinaryPrimitives.ReadInt32BigEndian(header.Slice(8, 4)) != 13 ||
+                !header.Slice(12, 4).SequenceEqual("IHDR"u8))
+            throw new InvalidDataException("Preview must start with a 13-byte IHDR chunk.");
+        int width = BinaryPrimitives.ReadInt32BigEndian(header.Slice(16, 4));
+        int height = BinaryPrimitives.ReadInt32BigEndian(header.Slice(20, 4));
+        if (width <= 0 || height <= 0 || width != height)
+            throw new InvalidDataException("Preview dimensions must be positive and square.");
+    }
+
+    private static void PreviewPngContractCoverage() {
+        foreach (int size in new[] { 1, 512, 1254, int.MaxValue }) {
+            var header = PreviewHeader(size, size);
+            ValidatePreviewPngHeader(header, PngHeaderBytes);
+            Program.Check(true, "positive square PNG header accepted without a fixed pixel size: " + size);
+        }
+
+        var valid = PreviewHeader(1254, 1254);
+        ValidatePreviewPngHeader(valid, MaxPreviewBytes);
+        Program.Check(true, "preview accepts the project byte limit without allocating that file size");
+        Program.Throws<InvalidDataException>(
+            () => ValidatePreviewPngHeader(valid, MaxPreviewBytes + 1), "preview rejects one byte over the project limit");
+        foreach (long length in new long[] { -1, 0, PngHeaderBytes - 1 })
+            Program.Throws<InvalidDataException>(
+                () => ValidatePreviewPngHeader(valid, length), "preview rejects invalid file length: " + length);
+
+        foreach (int length in new[] { 0, 7, 8, 15, 16, 23, 24, 28, 32 })
+            Program.Throws<InvalidDataException>(
+                () => ValidatePreviewPngHeader(valid.AsSpan(0, length), PngHeaderBytes),
+                "preview rejects truncated PNG header: " + length);
+        for (int i = 0; i < 8; i++) {
+            var corrupted = (byte[])valid.Clone();
+            corrupted[i] ^= 1;
+            Program.Throws<InvalidDataException>(
+                () => ValidatePreviewPngHeader(corrupted, corrupted.Length), "preview checks signature byte: " + i);
+        }
+
+        var wrongType = (byte[])valid.Clone();
+        wrongType[12] = (byte)'X';
+        Program.Throws<InvalidDataException>(
+            () => ValidatePreviewPngHeader(wrongType, wrongType.Length), "preview rejects a first chunk other than IHDR");
+        foreach (int length in new[] { 0, 12, 14 }) {
+            var wrongLength = (byte[])valid.Clone();
+            BinaryPrimitives.WriteInt32BigEndian(wrongLength.AsSpan(8, 4), length);
+            Program.Throws<InvalidDataException>(
+                () => ValidatePreviewPngHeader(wrongLength, wrongLength.Length), "preview rejects invalid IHDR length: " + length);
+        }
+        foreach (var dimensions in new[] { (0, 1), (1, 0), (int.MinValue, 1), (1, int.MinValue), (512, 1254), (1254, 512) }) {
+            var invalid = PreviewHeader(dimensions.Item1, dimensions.Item2);
+            Program.Throws<InvalidDataException>(
+                () => ValidatePreviewPngHeader(invalid, invalid.Length), "preview rejects invalid dimensions: " + dimensions);
+        }
+    }
+
+    // Header fixtures exercise the contract only; this is not a PNG pixel decoder.
+    private static byte[] PreviewHeader(int width, int height) {
+        var header = new byte[PngHeaderBytes];
+        new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }.CopyTo(header, 0);
+        BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), 13);
+        "IHDR"u8.CopyTo(header.AsSpan(12, 4));
+        BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(16, 4), width);
+        BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(20, 4), height);
+        header[24] = 8;
+        header[25] = 6;
+        return header;
     }
 
     private static void Documents(string root) {
@@ -190,9 +270,6 @@ internal static class SourceContract {
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
-
-    private static int ReadBigEndian(byte[] data, int offset) =>
-        (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
 
     private static string RepoRoot() {
         foreach (var start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() }) {
